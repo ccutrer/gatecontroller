@@ -115,4 +115,5 @@ end
   dofile("config.lua")
   dofile("control.lua")
   dofile("mqtt.lua")
+  dofile("ota_update.lua")
   

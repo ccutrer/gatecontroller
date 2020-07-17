@@ -1,12 +1,14 @@
-local m = mqtt.Client(wifi.sta.getmac(), 120, MQTT_USERNAME, MQTT_PASSWORD)
+local m = mqtt.Client(wifi.sta.getmac(), 30, MQTT_USERNAME, MQTT_PASSWORD)
 
 m:lwt("homie/"..NODE_NAME.."/$state", "lost", 0, 1)
 
 local connected = false
+local connectionAttempts = 0
 
 m:on("connect", function(client)
   print("connected to MQTT")
   connected = true
+  connectionAttempts = 0
 
   client:publish("homie/"..NODE_NAME.."/$homie", "4.0.0", 0, 1)
   client:publish("homie/"..NODE_NAME.."/$name", "Gate Controller", 0, 1)
@@ -58,6 +60,7 @@ m:on("connect", function(client)
   client:subscribe("homie/"..NODE_NAME.."/latch/locked/set", 0)
   client:subscribe("homie/"..NODE_NAME.."/latch/latched/set", 0)
   client:subscribe("homie/"..NODE_NAME.."/latch/restricted/set", 0)
+  client:subscribe("homie/"..NODE_NAME.."/$ota_update", 0)
 
   client:publish("homie/"..NODE_NAME.."/$state", "ready", 0, 1)
 end)
@@ -65,8 +68,15 @@ end)
 local connectionFailed
 
 local function reconnect(client)
-  -- try again in 10 seconds
-  tmr.create():alarm(10000, tmr.ALARM_SINGLE, function()
+  local delay = 0
+  if connectionAttempts == 7 then
+    node.restart()
+  else
+    delay = 3 ^ connectionAttempts * 1000 - 1000 + 1
+  end
+
+  connectionAttempts = connectionAttempts + 1
+  tmr.create():alarm(delay, tmr.ALARM_SINGLE, function()
     client:connect(MQTT_HOST, MQTT_PORT, MQTT_SECURE, nil, connectionFailed)
   end)
 end
@@ -126,6 +136,12 @@ function receivedCode(code)
   m:publish("homie/"..NODE_NAME.."/keypad/code", "", 0, 1)
 end
 
+local function split(string, sep)
+  local sep, fields = sep or ":", {}
+  local pattern = string.format("([^%s]+)", sep)
+  string:gsub(pattern, function(c) fields[#fields+1] = c end)
+  return fields
+end
 
 m:on("message", function(client, topic, message)
   print("got message "..tostring(message).." at "..topic)
@@ -137,7 +153,11 @@ m:on("message", function(client, topic, message)
     if message == "false" then unlatch() end
   elseif topic == "homie/"..NODE_NAME.."/latch/restricted/set" then
     restricted = message == "true" and true or false
-    client:pubmlish("homie/"..NODE_NAME.."/latch/restricte", tostring(restricted))
+    client:publish("homie/"..NODE_NAME.."/latch/restricte", tostring(restricted))
+  elseif topic == "homie/"..NODE_NAME.."/$ota_update" then
+    local fields = split(tostring(message), "\n")
+    local host, port, path = fields[1], fields[2], fields[3]
+    otaUpdate(host, port, path)
   end
 end)
 
