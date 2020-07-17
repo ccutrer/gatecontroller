@@ -11,6 +11,7 @@ m:on("connect", function(client)
   connectionAttempts = 0
 
   client:publish("homie/"..NODE_NAME.."/$homie", "4.0.0", 0, 1)
+  client:publish("homie/"..NODE_NAME.."/$fwversion", tostring(VERSION), 0, 1)
   client:publish("homie/"..NODE_NAME.."/$name", "Gate Controller", 0, 1)
   client:publish("homie/"..NODE_NAME.."/$nodes", "keypad,latch", 0, 1)
 

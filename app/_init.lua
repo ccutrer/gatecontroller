@@ -112,7 +112,8 @@ end
   -- contact sensor
   gpio.mode(7, gpio.INT, gpio.PULLUP)
 
-  dofile("config.lua")
+  VERSION = "1.0.1"
+
   dofile("control.lua")
   dofile("mqtt.lua")
   dofile("ota_update.lua")
