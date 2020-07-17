@@ -17,6 +17,9 @@ m:on("connect", function(client)
   if HAS_LATCH then
     nodes = nodes .. ",latch"
   end
+  if HAS_COVER then
+    nodes = nodes .. ",cover"
+  end
   client:publish("homie/"..NODE_NAME.."/$nodes", nodes, 0, 1)
 
   client:publish("homie/"..NODE_NAME.."/keypad/$name", "Keypad", 0, 1)
@@ -63,12 +66,54 @@ m:on("connect", function(client)
     latchedChanged()  
   end
 
+  if HAS_COVER then
+    lastRange = nil
+    client:publish("homie/"..NODE_NAME.."/cover/$name", "Pool Cover", 0, 1)
+    client:publish("homie/"..NODE_NAME.."/cover/$type", "Pool Cover", 0, 1)
+    client:publish("homie/"..NODE_NAME.."/cover/$properties", "position,position-percent,range,state", 0, 1)
+  
+    client:publish("homie/"..NODE_NAME.."/cover/position/$name", "Position (absolute)", 0, 1)
+    client:publish("homie/"..NODE_NAME.."/cover/position/$datatype", "integer", 0, 1)
+    client:publish("homie/"..NODE_NAME.."/cover/position/$settable", "true", 0, 1)
+  
+    client:publish("homie/"..NODE_NAME.."/cover/position-percent/$name", "Position (percent)", 0, 1)
+    client:publish("homie/"..NODE_NAME.."/cover/position-percent/$datatype", "float", 0, 1)
+    client:publish("homie/"..NODE_NAME.."/cover/position-percent/$unit", "%", 0, 1)
+    client:publish("homie/"..NODE_NAME.."/cover/position-percent/$format", "0:100", 0, 1)
+    client:publish("homie/"..NODE_NAME.."/cover/position-percent/$settable", "true", 0, 1)
+  
+    client:publish("homie/"..NODE_NAME.."/cover/range/$name", "Range (absolute)", 0, 1)
+    client:publish("homie/"..NODE_NAME.."/cover/range/$datatype", "integer", 0, 1)
+    client:publish("homie/"..NODE_NAME.."/cover/range/$settable", "true", 0, 1)
+  
+    client:publish("homie/"..NODE_NAME.."/cover/state/$name", "State", 0, 1)
+    client:publish("homie/"..NODE_NAME.."/cover/state/$datatype", "enum", 0, 1)
+    client:publish("homie/"..NODE_NAME.."/cover/state/$format", "stopped,opening,closing", 0, 1)
+  
+    positionChanged()
+    stateChanged()
+  end
+
   client:subscribe("homie/"..NODE_NAME.."/keypad/success/set", 0)
   if HAS_LATCH then
     client:subscribe("homie/"..NODE_NAME.."/latch/locked/set", 0)
     client:subscribe("homie/"..NODE_NAME.."/latch/latched/set", 0)
     client:subscribe("homie/"..NODE_NAME.."/latch/restricted/set", 0)
   end
+  if HAS_COVER then
+    -- use MQTT itself as our state store
+    if position == nil then
+      client:subscribe("homie/"..NODE_NAME.."/cover/position", 0)
+    end
+    if range == nil then
+      client:subscribe("homie/"..NODE_NAME.."/cover/range", 0)
+    end
+
+    client:subscribe("homie/"..NODE_NAME.."/cover/position/set", 0)
+    client:subscribe("homie/"..NODE_NAME.."/cover/position-percent/set", 0)
+    client:subscribe("homie/"..NODE_NAME.."/cover/range/set", 0)
+  end
+
   client:subscribe("homie/"..NODE_NAME.."/$ota_update", 0)
 
   client:publish("homie/"..NODE_NAME.."/$state", "ready", 0, 1)
@@ -131,6 +176,44 @@ if HAS_LATCH then
   end
 end
 
+if HAS_COVER then
+  function positionChanged()
+    if connected == false then
+      return
+    end
+
+    if position ~= nil then
+      m:publish("homie/"..NODE_NAME.."/cover/position", position, 0, 1)
+      if range ~= nil then
+        m:publish("homie/"..NODE_NAME.."/cover/position-percent", position * 100 / range, 0, 1)
+      end
+    end
+    if range ~= lastRange then
+      if range ~= nil then
+        m:publish("homie/"..NODE_NAME.."/cover/range", range, 0, 1)
+        m:publish("homie/"..NODE_NAME.."/cover/position/$format", "0:"..tostring(range), 0, 1)
+      end
+      lastRange = range
+    end
+  end
+
+  function stateChanged()
+    if connected == false then
+      return
+    end
+
+    local stateString
+    if state == 0 then
+      stateString = "stopped"
+    elseif direction == 0 then
+      stateString = "opening"
+    else
+      stateString = "closing"
+    end
+    m:publish("homie/"..NODE_NAME.."/cover/state", stateString, 0, 1)
+  end
+end
+
 function triggerBell()
   if connected == false then
     return
@@ -159,15 +242,64 @@ end
 m:on("message", function(client, topic, message)
   print("got message "..tostring(message).." at "..topic)
 
-  if topic == "homie/"..NODE_NAME.."/latch/locked/set" then
-    locked = message == "true" and true or false
-    lockedChanged()
-  elseif topic == "homie/"..NODE_NAME.."/latch/latched/set" then
-    if message == "false" then unlatch() end
-  elseif topic == "homie/"..NODE_NAME.."/latch/restricted/set" then
-    restricted = message == "true" and true or false
-    client:publish("homie/"..NODE_NAME.."/latch/restricte", tostring(restricted))
-  elseif topic == "homie/"..NODE_NAME.."/$ota_update" then
+  if HAS_LATCH then
+    if topic == "homie/"..NODE_NAME.."/latch/locked/set" then
+      locked = message == "true" and true or false
+      lockedChanged()
+    elseif topic == "homie/"..NODE_NAME.."/latch/latched/set" then
+      if message == "false" then unlatch() end
+    elseif topic == "homie/"..NODE_NAME.."/latch/restricted/set" then
+      restricted = message == "true" and true or false
+      client:publish("homie/"..NODE_NAME.."/latch/restricte", tostring(restricted))
+    end
+  end
+    
+  if HAS_COVER then
+    if topic == "homie/"..NODE_NAME.."/cover/position-percent/set" then
+      if message == "UP" then
+        startMovement(0)
+      elseif message == "DOWN" then
+        startMovement(1)
+      elseif message == "STOP" then
+        stopMovement()
+      else
+        local targetPosition = tonumber(message)
+        if targetPosition == nil or range == nil then
+          return
+        end
+        -- round to the closest integer stop
+        moveTo(math.floor(targetPosition * range / 100 + 0.5))
+      end
+    elseif topic == "homie/"..NODE_NAME.."/cover/position/set" then
+      if message == "" then
+        position = nil
+        return
+      end
+      local value = tonumber(message)
+      if value == nil then
+        return
+      end
+      if position == nil then
+        position = value
+      else
+        moveTo(value)
+      end
+    elseif topic == "homie/"..NODE_NAME.."/cover/range/set" then
+      range = tonumber(message)
+    elseif topic == "homie/"..NODE_NAME.."/cover/range" then
+      if range == nil then
+        range = tonumber(message)
+        client:unsubscribe("homie/"..NODE_NAME.."/cover/range")
+      end
+    elseif topic == "homie/"..NODE_NAME.."/cover/position" then
+      if position == nil then
+        position = tonumber(message)
+        client:unsubscribe("homie/"..NODE_NAME.."/cover/position")
+      end
+    end
+  end
+
+  if topic == "homie/"..NODE_NAME.."/$ota_update" then
     local fields = split(tostring(message), "\n")
     local host, port, path = fields[1], fields[2], fields[3]
     otaUpdate(host, port, path)

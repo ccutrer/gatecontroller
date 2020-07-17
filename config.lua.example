@@ -7,3 +7,4 @@ NODE_NAME = "backgate"
 HAS_CONTACT = true
 HAS_LATCH = true
 HAS_PUSH_TO_EXIT = true
+HAS_COVER = false

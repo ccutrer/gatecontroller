@@ -98,29 +98,56 @@ G.dofile = function(n)
   if ba or (ext ~= 'lc' and ext ~= 'lua') then return df(n) else return fn() end
 end
 
-  -- latch relay
-  if HAS_LATCH then
-    gpio.mode(0, gpio.OUTPUT)
-    gpio.write(0, gpio.HIGH)
-  end
-  -- 1 and 2 are for Weigand
-  -- bell
-  gpio.mode(4, gpio.INT, gpio.PULLUP)
-  -- door relay (to confirm success to keypad)
-  gpio.mode(5, gpio.OUTPUT)
-  gpio.write(5, gpio.HIGH)
-  -- push-to-exit
-  if HAS_PUSH_TO_EXIT then
-    gpio.mode(6, gpio.INT, gpio.PULLUP)
-  end
-  -- contact sensor
-  if HAS_CONTACT then
-    gpio.mode(7, gpio.INT, gpio.PULLUP)
-  end
 
-  VERSION = "1.0.3"
 
-  dofile("control.lua")
-  dofile("mqtt.lua")
-  dofile("ota_update.lua")
-  
+if HAS_LATCH and HAS_COVER then
+  print("can't have both cover and latch!\n")
+  node.restart()
+end
+
+-- latch relay
+if HAS_LATCH then
+  gpio.mode(0, gpio.OUTPUT)
+  gpio.write(0, gpio.HIGH)
+end
+-- 1 and 2 are for Weigand
+-- bell
+gpio.mode(4, gpio.INT, gpio.PULLUP)
+-- door relay (to confirm success to keypad)
+gpio.mode(5, gpio.OUTPUT)
+gpio.write(5, gpio.HIGH)
+-- push-to-exit
+if HAS_PUSH_TO_EXIT then
+  gpio.mode(6, gpio.INT, gpio.PULLUP)
+end
+-- contact sensor
+if HAS_CONTACT then
+  gpio.mode(7, gpio.INT, gpio.PULLUP)
+end
+
+if HAS_COVER then
+  -- make sure A0 is initialized properly
+  if adc.force_init_mode(adc.INIT_ADC) then
+    node.restart()
+  end
+  -- open and close relays
+  gpio.mode(0, gpio.OUTPUT)
+  gpio.write(0, gpio.HIGH)
+  gpio.mode(3, gpio.OUTPUT)
+  gpio.write(3, gpio.HIGH)
+  -- counter contact
+  gpio.mode(7, gpio.INT, gpio.PULLUP)
+  -- open and close commands from keypad
+  gpio.mode(8, gpio.INT, gpio.PULLUP)
+  gpio.mode(9, gpio.INT, gpio.PULLUP)
+end
+
+VERSION = "1.1.1"
+
+if HAS_COVER then
+  dofile("ammeter.lua")
+  dofile("cover.lua")
+end
+dofile("keypad.lua")
+dofile("mqtt.lua")
+dofile("ota_update.lua")
