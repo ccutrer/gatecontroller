@@ -99,8 +99,10 @@ G.dofile = function(n)
 end
 
   -- latch relay
-  gpio.mode(0, gpio.OUTPUT)
-  gpio.write(0, gpio.HIGH)
+  if HAS_LATCH then
+    gpio.mode(0, gpio.OUTPUT)
+    gpio.write(0, gpio.HIGH)
+  end
   -- 1 and 2 are for Weigand
   -- bell
   gpio.mode(4, gpio.INT, gpio.PULLUP)
@@ -108,11 +110,15 @@ end
   gpio.mode(5, gpio.OUTPUT)
   gpio.write(5, gpio.HIGH)
   -- push-to-exit
-  gpio.mode(6, gpio.INT, gpio.PULLUP)
+  if HAS_PUSH_TO_EXIT then
+    gpio.mode(6, gpio.INT, gpio.PULLUP)
+  end
   -- contact sensor
-  gpio.mode(7, gpio.INT, gpio.PULLUP)
+  if HAS_CONTACT then
+    gpio.mode(7, gpio.INT, gpio.PULLUP)
+  end
 
-  VERSION = "1.0.1"
+  VERSION = "1.0.3"
 
   dofile("control.lua")
   dofile("mqtt.lua")
