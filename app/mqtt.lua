@@ -1,4 +1,4 @@
-local m = mqtt.Client(wifi.sta.getmac(), 30, MQTT_USERNAME, MQTT_PASSWORD)
+local m = mqtt.Client(wifi.sta.getmac(), 900, MQTT_USERNAME, MQTT_PASSWORD)
 
 m:lwt("homie/"..NODE_NAME.."/$state", "lost", 0, 1)
 
