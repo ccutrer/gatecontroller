@@ -115,6 +115,7 @@ m:on("connect", function(client)
   end
 
   client:subscribe("homie/"..NODE_NAME.."/$ota_update", 0)
+  client:subscribe("homie/"..NODE_NAME.."/$config", 0)
 
   client:publish("homie/"..NODE_NAME.."/$state", "ready", 0, 1)
 end)
@@ -303,6 +304,11 @@ m:on("message", function(client, topic, message)
     local fields = split(tostring(message), "\n")
     local host, port, path = fields[1], fields[2], fields[3]
     otaUpdate(host, port, path)
+  elseif topic == "homie/"..NODE_NAME.."/$config" and message ~= nil and message ~= "" then
+    file.open("config.lua", 'w')
+    file.write(message)
+    file.close()
+    node.restart()
   end
 end)
 
