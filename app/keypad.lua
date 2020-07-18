@@ -142,8 +142,13 @@ wiegand.create(1, 2, function(code, type)
       if totalCode == "" then
         if lastEsc then
           lastEsc = false
-          locked = true
-          lockedChanged()
+          if HAS_LATCH then
+            locked = true
+            lockedChanged()
+          else
+            -- we don't have a local latch; let the hub handle it
+            receivedCode("**")
+          end
           signalSuccess()
         else
           lastEsc = true
