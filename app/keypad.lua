@@ -35,6 +35,7 @@ end
 if HAS_LATCH then
   function unlatch()
     if HAS_CONTACT and closed == false then
+      log("not unlatching because the gate is open")
       return
     end
 
@@ -44,7 +45,7 @@ if HAS_LATCH then
       return
     end
 
-    print("unlatching")
+    log("unlatching")
     signalSuccess()
 
     gpio.write(0, gpio.LOW)
@@ -52,7 +53,7 @@ if HAS_LATCH then
     latchedChanged()
     latchTimer = tmr.create()
     latchTimer:alarm(5000, tmr.ALARM_SINGLE, function()
-      print("re-latching")
+      log("re-latching")
       gpio.write(0, gpio.HIGH)
       latched = true
       latchedChanged()
@@ -67,7 +68,7 @@ if HAS_LATCH then
         closed = newClosed
         closedChanged()
       end
-      print("contact changed "..tostring(newClosed))
+      log("contact changed "..tostring(newClosed))
       -- latch is closed, but it wasn't open long enough to be useful;
       -- abort the quick-re-latch
       if closed == true and openTimer then
@@ -85,7 +86,7 @@ if HAS_LATCH then
 
         openTimer = tmr.create()
         openTimer:alarm(500, tmr.ALARM_SINGLE, function()
-          print("re-latched because door opened")
+          log("re-latched because door opened")
           gpio.write(0, gpio.HIGH)
           latched = true
           latchedChanged()
@@ -93,7 +94,7 @@ if HAS_LATCH then
             latchTimer:stop()
             latchTimer:unregister()
             latchTimer = nil
-            print("latch timer canceled")
+            log("latch timer canceled")
           end
           openTimer = nil
         end)
@@ -105,7 +106,7 @@ end
 -- bell
 gpio.trig(4, "down", function()
   triggered = gpio.read(4) == 0
-  print("bell pressed: " .. tostring(triggered))
+  log("bell pressed: " .. tostring(triggered))
   if triggered then 
     if HAS_LATCH and locked == false then
       unlatch()
@@ -119,7 +120,7 @@ end)
 if HAS_PUSH_TO_EXIT then
   gpio.trig(6, "both", function()
     triggered = gpio.read(6) == 0
-    print("exit requested: " .. tostring(triggered))
+    log("exit requested: " .. tostring(triggered))
     if triggered and restricted == false then unlatch() end
   end)
 end
@@ -129,7 +130,7 @@ local keypadTimeout
 local lastEsc = false
 
 wiegand.create(1, 2, function(code, type)
-  print("got code "..code)
+  log("got code "..code)
   lastInput = tmr.now()
   if type == 4 then
     if keypadTimeout then

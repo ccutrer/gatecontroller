@@ -116,6 +116,7 @@ m:on("connect", function(client)
 
   client:subscribe("homie/"..NODE_NAME.."/$ota_update", 0)
   client:subscribe("homie/"..NODE_NAME.."/$config", 0)
+  client:subscribe("homie/"..NODE_NAME.."/$debug", 0)
 
   client:publish("homie/"..NODE_NAME.."/$state", "ready", 0, 1)
 end)
@@ -241,7 +242,7 @@ local function split(string, sep)
 end
 
 m:on("message", function(client, topic, message)
-  print("got message "..tostring(message).." at "..topic)
+  log("got message "..tostring(message).." at "..topic)
 
   if HAS_LATCH then
     if topic == "homie/"..NODE_NAME.."/latch/locked/set" then
@@ -309,11 +310,14 @@ m:on("message", function(client, topic, message)
     file.write(message)
     file.close()
     node.restart()
+  elseif topic == "homie/"..NODE_NAME.."/$debug" then
+    debug = message == "true"
   end
 end)
 
+debug = false
 function log(message)
-  if connected then
+  if connected and debug then
     m:publish("homie/"..NODE_NAME.."/$log", message, 0, 0)
   end
   print(message)
