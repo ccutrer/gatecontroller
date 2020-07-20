@@ -99,6 +99,7 @@ G.dofile = function(n)
 end
 
 
+wifi.sta.sethostname(NODE_NAME)
 
 if HAS_LATCH and HAS_COVER then
   print("can't have both cover and latch!\n")
@@ -142,7 +143,7 @@ if HAS_COVER then
   gpio.mode(9, gpio.INT, gpio.PULLUP)
 end
 
-VERSION = "1.1.4"
+VERSION = "1.1.5"
 
 if HAS_COVER then
   dofile("ammeter.lua")
