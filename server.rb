@@ -17,6 +17,8 @@ loop do
   # I/O objects. (In fact, TCPSocket is a subclass of IO.)
   socket = server.accept
 
+  file.seek(0)
+
   # Read the first line of the request (the Request-Line)
   request = socket.gets
 
@@ -34,7 +36,7 @@ loop do
 
   loop do
     line = file.read(1024)
-    break if line == ""
+    break if line.nil?
     socket.write(line)
   end
 
