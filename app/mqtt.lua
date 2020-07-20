@@ -94,6 +94,13 @@ m:on("connect", function(client)
     stateChanged()
   end
 
+  client:publish("homie/"..NODE_NAME.."/$rssi", tostring(wifi.sta.getrssi()), 0, 1)
+  tmr.create():alarm(60000, tmr.ALARM_AUTO, function()
+    if connected then
+      client:publish("homie/"..NODE_NAME.."/$rssi", tostring(wifi.sta.getrssi()), 0, 1)
+    end
+  end)
+
   client:subscribe("homie/"..NODE_NAME.."/keypad/success/set", 0)
   if HAS_LATCH then
     client:subscribe("homie/"..NODE_NAME.."/latch/locked/set", 0)
