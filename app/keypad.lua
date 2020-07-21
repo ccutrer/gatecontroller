@@ -14,8 +14,9 @@ if HAS_PUSH_TO_EXIT then
 end
 
 local lastInput = 0
+local successTimer
 
-local function signalSuccess()
+function signalSuccess()
   -- have to delay success sending until we didn't recently get input
   delta = tmr.now() - lastInput
   if delta < 0 then delta = delta + 2147483647 end;
@@ -26,27 +27,36 @@ local function signalSuccess()
     return
   end
 
-  gpio.write(5, gpio.LOW)
-  tmr.create():alarm(500, tmr.ALARM_SINGLE, function()
-    gpio.write(5, gpio.HIGH)
-  end)
+  if successTimer then
+    log("extending success signal")
+    successTimer:stop()
+    successTimer:start()
+  else
+    log("signaling success")
+    gpio.write(5, gpio.LOW)
+    successTimer = tmr.create()
+    successTimer:alarm(2000, tmr.ALARM_SINGLE, function()
+      gpio.write(5, gpio.HIGH)
+      log("success done")
+      successTimer = nil
+    end)
+  end
 end
 
 if HAS_LATCH then
   function unlatch()
-    if HAS_CONTACT and closed == false then
+    if HAS_CONTACT and not closed then
       log("not unlatching because the gate is open")
       return
     end
 
-    if latched == false then
+    if not latched then
       latchTimer:stop()
       latchTimer:start()
       return
     end
 
     log("unlatching")
-    signalSuccess()
 
     gpio.write(0, gpio.LOW)
     latched = false
@@ -57,6 +67,7 @@ if HAS_LATCH then
       gpio.write(0, gpio.HIGH)
       latched = true
       latchedChanged()
+      latchTimer = nil
     end)
   end
 
@@ -71,13 +82,14 @@ if HAS_LATCH then
       log("contact changed "..tostring(newClosed))
       -- latch is closed, but it wasn't open long enough to be useful;
       -- abort the quick-re-latch
-      if closed == true and openTimer then
+      if closed and openTimer then
         openTimer:stop()
         openTimer:unregister()
+        openTimer = nil
         return
       end
 
-      if latched == false and closed == false then
+      if not latched and not closed then
         if openTimer then
           openTimer:stop()
           openTimer:start()
@@ -108,7 +120,8 @@ gpio.trig(4, "down", function()
   triggered = gpio.read(4) == 0
   log("bell pressed: " .. tostring(triggered))
   if triggered then 
-    if HAS_LATCH and locked == false then
+    if HAS_LATCH and not locked then
+      if not HAS_CONTACT or closed then signalSuccess() end
       unlatch()
     else
       triggerBell()
@@ -121,7 +134,7 @@ if HAS_PUSH_TO_EXIT then
   gpio.trig(6, "both", function()
     triggered = gpio.read(6) == 0
     log("exit requested: " .. tostring(triggered))
-    if triggered and restricted == false then unlatch() end
+    if triggered and not restricted then unlatch() end
   end)
 end
 
@@ -146,11 +159,11 @@ wiegand.create(1, 2, function(code, type)
           if HAS_LATCH then
             locked = true
             lockedChanged()
+            signalSuccess()
           else
             -- we don't have a local latch; let the hub handle it
             receivedCode("**")
           end
-          signalSuccess()
         else
           lastEsc = true
           keypadTimeout = tmr.create()

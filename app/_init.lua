@@ -143,7 +143,7 @@ if HAS_COVER then
   gpio.mode(9, gpio.INT, gpio.PULLUP)
 end
 
-VERSION = "1.1.6"
+VERSION = "1.1.8"
 
 if HAS_COVER then
   dofile("ammeter.lua")

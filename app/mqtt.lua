@@ -24,17 +24,20 @@ m:on("connect", function(client)
 
   client:publish("homie/"..NODE_NAME.."/keypad/$name", "Keypad", 0, 1)
   client:publish("homie/"..NODE_NAME.."/keypad/$type", "Weigand", 0, 1)
-  client:publish("homie/"..NODE_NAME.."/keypad/$properties", "code,bell", 0, 1)
+  client:publish("homie/"..NODE_NAME.."/keypad/$properties", "code,bell,success", 0, 1)
 
   client:publish("homie/"..NODE_NAME.."/keypad/code/$name", "Received Code", 0, 1)
   client:publish("homie/"..NODE_NAME.."/keypad/code/$datatype", "string", 0, 1)
   client:publish("homie/"..NODE_NAME.."/keypad/code/$retained", "false", 0, 1)
-  client:publish("homie/"..NODE_NAME.."/keypad/code", "", 0, 1)
 
   client:publish("homie/"..NODE_NAME.."/keypad/bell/$name", "Bell Pressed", 0, 1)
   client:publish("homie/"..NODE_NAME.."/keypad/bell/$datatype", "boolean", 0, 1)
   client:publish("homie/"..NODE_NAME.."/keypad/bell/$retained", "false", 0, 1)
-  client:publish("homie/"..NODE_NAME.."/keypad/bell", "false", 0, 1)
+
+  client:publish("homie/"..NODE_NAME.."/keypad/success/$name", "Signal Success", 0, 1)
+  client:publish("homie/"..NODE_NAME.."/keypad/success/$datatype", "boolean", 0, 1)
+  client:publish("homie/"..NODE_NAME.."/keypad/success/$retained", "false", 0, 1)
+  client:publish("homie/"..NODE_NAME.."/keypad/success/$settable", "true", 0, 1)
 
   if HAS_LATCH then
     client:publish("homie/"..NODE_NAME.."/latch/$name", "Latch", 0, 1)
@@ -229,7 +232,6 @@ function triggerBell()
   end
 
   m:publish("homie/"..NODE_NAME.."/keypad/bell", "true", 0, 0)
-  m:publish("homie/"..NODE_NAME.."/keypad/bell", "false", 0, 1)
 end
 
 function receivedCode(code)
@@ -238,7 +240,6 @@ function receivedCode(code)
   end
 
   m:publish("homie/"..NODE_NAME.."/keypad/code", code, 0, 0)
-  m:publish("homie/"..NODE_NAME.."/keypad/code", "", 0, 1)
 end
 
 local function split(string, sep)
@@ -308,7 +309,9 @@ m:on("message", function(client, topic, message)
     end
   end
 
-  if topic == "homie/"..NODE_NAME.."/$ota_update" then
+  if topic == "homie/"..NODE_NAME.."/keypad/success/set" then
+    if message == "true" then signalSuccess() end
+  elseif topic == "homie/"..NODE_NAME.."/$ota_update" then
     local fields = split(tostring(message), "\n")
     local host, port, path = fields[1], fields[2], fields[3]
     otaUpdate(host, port, path)
