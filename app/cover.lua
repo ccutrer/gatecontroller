@@ -146,7 +146,7 @@ function counterHit()
   end
 
   if position ~= nil then
-    position = position + (direction == 1 and 1 or -1)
+    position = position + (direction == 3 and 1 or -1)
     if positionChanged then
       positionChanged()
     end
@@ -156,3 +156,67 @@ function counterHit()
     end
   end
 end
+
+locked = true
+local lockTimer = nil
+
+function unlock()
+  if locked then
+    log("unlocking")
+    locked = false
+    gpio.write(8, gpio.LOW)
+    lockTimer = tmr.create()
+    lockTimer:alarm(5000, tmr.ALARM_SINGLE, function()
+      log("timed out")
+      lockTimer = nil
+      lock()
+    end)
+    lockedChanged()
+  end
+end
+
+function lock()
+  if not locked then
+    log("locking")
+    locked = true
+    gpio.write(8, gpio.HIGH)
+    if lockTimer ~= nil then
+      lockTimer:stop()
+      lockTimer:unregister()
+      lockTimer = nil
+    end
+    lockedChanged()
+  end
+end
+
+local open = 1
+local close = 1
+
+local function buttonPressed(pin)
+  if pin == 6 then
+    open = gpio.read(6)
+  end
+  if pin == 7 then
+    close = gpio.read(7)
+  end
+
+  log("button press open: "..tostring(open).." close "..tostring(close))
+
+  if locked == true then return end
+
+  if open == 0 and close == 0 then
+    stopMovement()
+  elseif open == 0 and close == 1 then
+    lockTimer:stop()
+    startMovement(0)
+  elseif open == 1 and close == 0 then
+    lockTimer:stop()
+    startMovement(3)
+  else
+    stopMovement()
+    lockTimer:start()
+  end
+end
+
+gpio.trig(6, "both", function(level) buttonPressed(6, level) end)
+gpio.trig(7, "both", function(level) buttonPressed(7, level) end)

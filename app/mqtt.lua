@@ -73,8 +73,12 @@ m:on("connect", function(client)
     lastRange = nil
     client:publish("homie/"..NODE_NAME.."/cover/$name", "Pool Cover", 0, 1)
     client:publish("homie/"..NODE_NAME.."/cover/$type", "Pool Cover", 0, 1)
-    client:publish("homie/"..NODE_NAME.."/cover/$properties", "position,position-percent,range,state", 0, 1)
-  
+    client:publish("homie/"..NODE_NAME.."/cover/$properties", "locked,position,position-percent,range,state", 0, 1)
+
+    client:publish("homie/"..NODE_NAME.."/cover/locked/$name", "Lock status (local control enabled)", 0, 1)
+    client:publish("homie/"..NODE_NAME.."/cover/locked/$datatype", "boolean", 0, 1)
+    client:publish("homie/"..NODE_NAME.."/cover/locked/$settable", "true", 0, 1)
+
     client:publish("homie/"..NODE_NAME.."/cover/position/$name", "Position (absolute)", 0, 1)
     client:publish("homie/"..NODE_NAME.."/cover/position/$datatype", "integer", 0, 1)
     client:publish("homie/"..NODE_NAME.."/cover/position/$settable", "true", 0, 1)
@@ -95,6 +99,7 @@ m:on("connect", function(client)
   
     positionChanged()
     stateChanged()
+    lockedChanged()
   end
 
   client:publish("homie/"..NODE_NAME.."/$rssi", tostring(wifi.sta.getrssi()), 0, 1)
@@ -119,6 +124,7 @@ m:on("connect", function(client)
       client:subscribe("homie/"..NODE_NAME.."/cover/range", 0)
     end
 
+    client:subscribe("homie/"..NODE_NAME.."/cover/locked/set", 0)
     client:subscribe("homie/"..NODE_NAME.."/cover/position/set", 0)
     client:subscribe("homie/"..NODE_NAME.."/cover/position-percent/set", 0)
     client:subscribe("homie/"..NODE_NAME.."/cover/range/set", 0)
@@ -224,6 +230,14 @@ if HAS_COVER then
     end
     m:publish("homie/"..NODE_NAME.."/cover/state", stateString, 0, 1)
   end
+
+  function lockedChanged()
+    if connected == false then
+      return
+    end
+
+    m:publish("homie/"..NODE_NAME.."/cover/locked", tostring(locked), 0, 1)
+  end
 end
 
 function triggerBell()
@@ -265,7 +279,13 @@ m:on("message", function(client, topic, message)
   end
     
   if HAS_COVER then
-    if topic == "homie/"..NODE_NAME.."/cover/position-percent/set" then
+    if topic == "homie/"..NODE_NAME.."/cover/locked/set" then
+      if message == "false" then
+        unlock()
+      else
+        lock()
+      end
+    elseif topic == "homie/"..NODE_NAME.."/cover/position-percent/set" then
       if message == "UP" then
         startMovement(0)
       elseif message == "DOWN" then
@@ -296,6 +316,7 @@ m:on("message", function(client, topic, message)
       end
     elseif topic == "homie/"..NODE_NAME.."/cover/range/set" then
       range = tonumber(message)
+      positionChanged()
     elseif topic == "homie/"..NODE_NAME.."/cover/range" then
       if range == nil then
         range = tonumber(message)

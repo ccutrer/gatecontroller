@@ -136,19 +136,28 @@ if HAS_COVER then
   gpio.write(0, gpio.HIGH)
   gpio.mode(3, gpio.OUTPUT)
   gpio.write(3, gpio.HIGH)
-  -- counter contact
+  -- open/close buttons
+  gpio.mode(6, gpio.INT, gpio.PULLUP)
   gpio.mode(7, gpio.INT, gpio.PULLUP)
-  -- open and close commands from keypad
-  gpio.mode(8, gpio.INT, gpio.PULLUP)
-  gpio.mode(9, gpio.INT, gpio.PULLUP)
+  -- relay to light up open/close buttons
+  gpio.mode(8, gpio.OUTPUT)
+  gpio.write(8, gpio.HIGH)
+
+  if not SAVE_UART then
+    -- counter contact
+    gpio.mode(9, gpio.INT, gpio.PULLUP)
+  end
 end
 
-VERSION = "1.1.8"
+VERSION = "1.1.9"
 
-if HAS_COVER then
-  dofile("ammeter.lua")
-  dofile("cover.lua")
+if not NO_INIT then
+
+  if HAS_COVER then
+    dofile("ammeter.lua")
+    dofile("cover.lua")
+  end
+  dofile("keypad.lua")
+  dofile("mqtt.lua")
+  dofile("ota_update.lua")
 end
-dofile("keypad.lua")
-dofile("mqtt.lua")
-dofile("ota_update.lua")
