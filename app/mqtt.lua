@@ -260,7 +260,7 @@ m:on("message", function(client, topic, message)
       if message == "false" then unlatch() end
     elseif topic == "homie/"..NODE_NAME.."/latch/restricted/set" then
       restricted = message == "true" and true or false
-      client:publish("homie/"..NODE_NAME.."/latch/restricte", tostring(restricted))
+      client:publish("homie/"..NODE_NAME.."/latch/restricted", tostring(restricted), 0, 1)
     end
   end
     
@@ -322,6 +322,7 @@ m:on("message", function(client, topic, message)
     node.restart()
   elseif topic == "homie/"..NODE_NAME.."/$debug" then
     debug = message == "true"
+    log("debug set to "..tostring(debug))
   end
 end)
 
