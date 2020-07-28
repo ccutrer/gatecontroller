@@ -145,12 +145,12 @@ local lastEsc = false
 wiegand.create(1, 2, function(code, type)
   log("got code "..code)
   lastInput = tmr.now()
+  if keypadTimeout then
+    keypadTimeout:stop()
+    keypadTimeout:unregister()
+    keypadTimeout = nil
+  end
   if type == 4 then
-    if keypadTimeout then
-      keypadTimeout:stop()
-      keypadTimeout:unregister()
-      keypadTimeout = nil
-    end
     if code == 10 then -- *
       -- two esc in a row means to lock
       if totalCode == "" then
@@ -189,6 +189,10 @@ wiegand.create(1, 2, function(code, type)
     end
   else
     -- prepend a * so it knows it came from an RFID read
-    receivedCode("*"..code)
+    -- also include any pending typed PIN in case you want
+    -- to require both
+    receivedCode(totalCode.."*"..code)
+    totalCode = ""
+    lastEsc = false
   end
 end)
