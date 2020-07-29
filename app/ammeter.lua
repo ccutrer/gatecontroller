@@ -27,17 +27,20 @@ return vRMS * 1000/mVperAmp
 end
 
 local ammeterTimer = tmr.create()
--- 15ms, 10 samples kept = 0.15s total buffered
-ammeterTimer:alarm(15, tmr.ALARM_AUTO, function()
+-- 10ms, 20 samples kept = 0.2s total buffered
+ammeterTimer:alarm(10, tmr.ALARM_AUTO, function()
   ammeterReadings[buffer_idx] = adc.read(0)
   buffer_idx = buffer_idx + 1
-  if #ammeterReadings == 10 and buffer_idx % 10 == 0 then
+  if #ammeterReadings == 20 and buffer_idx % 10 == 0 then
     currentAmps = getAmps()
+    if currentAmps > 6 then
+      log("current amps "..tostring(currentAmps))
+    end
     if (ampsUpdated) then
       ampsUpdated()
     end
   end
-  if buffer_idx == 11 then
+  if buffer_idx == 21 then
     buffer_idx = 1
   end
 end)

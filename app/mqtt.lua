@@ -289,7 +289,7 @@ m:on("message", function(client, topic, message)
       if message == "UP" then
         startMovement(0)
       elseif message == "DOWN" then
-        startMovement(1)
+        startMovement(3)
       elseif message == "STOP" then
         stopMovement()
       else

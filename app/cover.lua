@@ -48,7 +48,7 @@ function startMovement(dir, newTarget)
     state = 2
     DEBUG = 5
   end
-  tmr.create():alarm(250, tmr.ALARM_SINGLE, function()
+  tmr.create():alarm(2500, tmr.ALARM_SINGLE, function()
     if state == 1 then
       stopMovement()
       log("aborting because motor never started")
@@ -69,9 +69,12 @@ function moveTo(newTarget)
     return
   end
 
-  -- full close
   if newTarget == range then
+    -- full close
     startMovement(3)
+  elseif newTarget == 0 then
+    -- full open
+    startMovement(0)
   elseif newTarget < position then
     startMovement(0, newTarget)
   else
@@ -85,16 +88,16 @@ function ampsUpdated()
   end
 
   -- failsafe
-  if currentAmps > 15 then
+  if currentAmps > 16 then
     stopMovement()
     log("overload abort")
   end
 
   if state == 1 then
-    if currentAmps > 10 then
+    if currentAmps > 8 then
       state = 2
       log("saw startup surge")
-      tmr.create():alarm(200, tmr.ALARM_SINGLE, function()
+      tmr.create():alarm(500, tmr.ALARM_SINGLE, function()
         if state == 2 then
           stopMovement()
           log("aborting because startup surge took too long")
@@ -111,18 +114,29 @@ function ampsUpdated()
         stateChanged()
       end
       log("startup surge complete")
+      if position == 0 and direction == 3 and not HAS_COUNTER then
+        position = 1
+        if (positionChanged) then
+          positionChanged()
+        end
+      elseif position == range and direction == 0 and not HAS_COUNTER then
+        position = range - 1
+        if (positionChanged) then
+          positionChanged()
+        end
+      end
     end
   elseif state == 3 then
-    if currentAmps > 7 then
-      if direction == 1 then
+    if currentAmps > 8 then
+      if direction == 3 then
         -- automatically set range if we hit the end
         -- AND we actually know where we are
-        if position ~= nil then
+        if position ~= nil and position ~= 0 and HAS_COUNTER then
           range = position
         end
         position = range
       else
-        if range ~= nil and position ~= nil then
+        if range ~= nil and position ~= nil and range ~= position and HAS_COUNTER then
           range = range - position
         end
         position = 0
@@ -202,11 +216,15 @@ local function buttonPressed(pin)
 
   log("button press open: "..tostring(open).." close "..tostring(close))
 
-  if locked == true then return end
-
+  -- both buttons pressed; you're always allowed to stop
+  -- even if locked (remote control)
   if open == 0 and close == 0 then
     stopMovement()
-  elseif open == 0 and close == 1 then
+  end
+
+  if locked == true then return end
+
+  if open == 0 and close == 1 then
     lockTimer:stop()
     startMovement(0)
   elseif open == 1 and close == 0 then
@@ -220,3 +238,21 @@ end
 
 gpio.trig(6, "both", function(level) buttonPressed(6, level) end)
 gpio.trig(7, "both", function(level) buttonPressed(7, level) end)
+
+local last = 0
+local delay = 250000 -- 250ms * 1000 as tmr.now() has μs resolution
+
+local function debounceCounter()
+  local now = tmr.now()
+  local delta = now - last
+  if delta < 0 then delta = delta + 2147483647 end
+  if delta < delay then return end
+
+  last = now
+
+  counterHit()
+end
+
+if HAS_COUNTER then
+  gpio.trig(9, "down", debounceCounter)
+end

@@ -143,13 +143,13 @@ if HAS_COVER then
   gpio.mode(8, gpio.OUTPUT)
   gpio.write(8, gpio.HIGH)
 
-  if not SAVE_UART then
+  if HAS_COUNTER then
     -- counter contact
     gpio.mode(9, gpio.INT, gpio.PULLUP)
   end
 end
 
-VERSION = "1.1.9"
+VERSION = "1.2.1"
 
 if not NO_INIT then
 
