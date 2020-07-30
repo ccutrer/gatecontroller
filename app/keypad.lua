@@ -119,14 +119,7 @@ end
 gpio.trig(4, "down", function()
   triggered = gpio.read(4) == 0
   log("bell pressed: " .. tostring(triggered))
-  if triggered then 
-    if HAS_LATCH and not locked then
-      if not HAS_CONTACT or closed then signalSuccess() end
-      unlatch()
-    else
-      triggerBell()
-    end
-  end
+  if triggered then triggerBell() end
 end)
 
 -- push-to-exit
@@ -141,6 +134,7 @@ end
 local totalCode = ""
 local keypadTimeout
 local lastEsc = false
+local lastEnter = false
 
 wiegand.create(1, 2, function(code, type)
   log("got code "..code)
@@ -172,15 +166,30 @@ wiegand.create(1, 2, function(code, type)
           end)
         end
       end
+      lastEnter = false
       totalCode = ""
     elseif code == 11 then -- #
       if totalCode ~= "" then
         receivedCode(totalCode)
         totalCode = ""
+        lastEnter = false
+      elseif lastEnter then
+        lastEnter = false
+        if HAS_LATCH and not locked then
+          signalSuccess()
+          unlatch()
+        end
+      else
+        lastEnter = true
+        keypadTimeout = tmr.create()
+        keypadTimeout:alarm(4000, tmr.ALARM_SINGLE, function()
+          lastEnter = false
+        end)
       end
       lastEsc = false
     else
       lastEsc = false
+      lastEnter = false
       totalCode = totalCode .. tostring(code)
       keypadTimeout = tmr.create()
       keypadTimeout:alarm(4000, tmr.ALARM_SINGLE, function()
@@ -194,5 +203,6 @@ wiegand.create(1, 2, function(code, type)
     receivedCode(totalCode.."*"..code)
     totalCode = ""
     lastEsc = false
+    lastEnter = false
   end
 end)
