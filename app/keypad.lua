@@ -150,13 +150,9 @@ wiegand.create(1, 2, function(code, type)
       if totalCode == "" then
         if lastEsc then
           lastEsc = false
-          if HAS_LATCH then
-            locked = true
-            lockedChanged()
+          if HAS_LATCH and not locked then
             signalSuccess()
-          else
-            -- we don't have a local latch; let the hub handle it
-            receivedCode("**")
+            unlatch()
           end
         else
           lastEsc = true
@@ -175,11 +171,15 @@ wiegand.create(1, 2, function(code, type)
         lastEnter = false
       elseif lastEnter then
         lastEnter = false
-        if HAS_LATCH and not locked then
+        if HAS_LATCH then
+          locked = true
+          lockedChanged()
           signalSuccess()
-          unlatch()
+        else
+          -- we don't have a local latch; let the hub handle it
+          receivedCode("**")
         end
-      else
+    else
         lastEnter = true
         keypadTimeout = tmr.create()
         keypadTimeout:alarm(4000, tmr.ALARM_SINGLE, function()
