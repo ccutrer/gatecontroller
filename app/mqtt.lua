@@ -1,6 +1,6 @@
 local m = mqtt.Client(wifi.sta.getmac(), 120, MQTT_USERNAME, MQTT_PASSWORD)
 
-m:lwt("homie/"..NODE_NAME.."/$state", "lost", 0, 1)
+m:lwt("homie/"..NODE_NAME.."/$state", "lost", 1, 1)
 
 local connected = false
 local connectionAttempts = 0
@@ -10,9 +10,9 @@ m:on("connect", function(client)
   connected = true
   connectionAttempts = 0
 
-  client:publish("homie/"..NODE_NAME.."/$homie", "4.0.0", 0, 1)
-  client:publish("homie/"..NODE_NAME.."/$fwversion", tostring(VERSION), 0, 1)
-  client:publish("homie/"..NODE_NAME.."/$name", "Gate Controller", 0, 1)
+  client:publish("homie/"..NODE_NAME.."/$homie", "4.0.0", 1, 1)
+  client:publish("homie/"..NODE_NAME.."/$fwversion", tostring(VERSION), 1, 1)
+  client:publish("homie/"..NODE_NAME.."/$name", "Gate Controller", 1, 1)
   local nodes = "keypad"
   if HAS_LATCH then
     nodes = nodes .. ",latch"
@@ -20,48 +20,48 @@ m:on("connect", function(client)
   if HAS_COVER then
     nodes = nodes .. ",cover"
   end
-  client:publish("homie/"..NODE_NAME.."/$nodes", nodes, 0, 1)
+  client:publish("homie/"..NODE_NAME.."/$nodes", nodes, 1, 1)
 
-  client:publish("homie/"..NODE_NAME.."/keypad/$name", "Keypad", 0, 1)
-  client:publish("homie/"..NODE_NAME.."/keypad/$type", "Weigand", 0, 1)
-  client:publish("homie/"..NODE_NAME.."/keypad/$properties", "code,bell,success", 0, 1)
+  client:publish("homie/"..NODE_NAME.."/keypad/$name", "Keypad", 1, 1)
+  client:publish("homie/"..NODE_NAME.."/keypad/$type", "Weigand", 1, 1)
+  client:publish("homie/"..NODE_NAME.."/keypad/$properties", "code,bell,success", 1, 1)
 
-  client:publish("homie/"..NODE_NAME.."/keypad/code/$name", "Received Code", 0, 1)
-  client:publish("homie/"..NODE_NAME.."/keypad/code/$datatype", "string", 0, 1)
-  client:publish("homie/"..NODE_NAME.."/keypad/code/$retained", "false", 0, 1)
+  client:publish("homie/"..NODE_NAME.."/keypad/code/$name", "Received Code", 1, 1)
+  client:publish("homie/"..NODE_NAME.."/keypad/code/$datatype", "string", 1, 1)
+  client:publish("homie/"..NODE_NAME.."/keypad/code/$retained", "false", 1, 1)
 
-  client:publish("homie/"..NODE_NAME.."/keypad/bell/$name", "Bell Pressed", 0, 1)
-  client:publish("homie/"..NODE_NAME.."/keypad/bell/$datatype", "boolean", 0, 1)
-  client:publish("homie/"..NODE_NAME.."/keypad/bell/$retained", "false", 0, 1)
+  client:publish("homie/"..NODE_NAME.."/keypad/bell/$name", "Bell Pressed", 1, 1)
+  client:publish("homie/"..NODE_NAME.."/keypad/bell/$datatype", "boolean", 1, 1)
+  client:publish("homie/"..NODE_NAME.."/keypad/bell/$retained", "false", 1, 1)
 
-  client:publish("homie/"..NODE_NAME.."/keypad/success/$name", "Signal Success", 0, 1)
-  client:publish("homie/"..NODE_NAME.."/keypad/success/$datatype", "boolean", 0, 1)
-  client:publish("homie/"..NODE_NAME.."/keypad/success/$retained", "false", 0, 1)
-  client:publish("homie/"..NODE_NAME.."/keypad/success/$settable", "true", 0, 1)
+  client:publish("homie/"..NODE_NAME.."/keypad/success/$name", "Signal Success", 1, 1)
+  client:publish("homie/"..NODE_NAME.."/keypad/success/$datatype", "boolean", 1, 1)
+  client:publish("homie/"..NODE_NAME.."/keypad/success/$retained", "false", 1, 1)
+  client:publish("homie/"..NODE_NAME.."/keypad/success/$settable", "true", 1, 1)
 
   if HAS_LATCH then
-    client:publish("homie/"..NODE_NAME.."/latch/$name", "Latch", 0, 1)
-    client:publish("homie/"..NODE_NAME.."/latch/$type", "Gate Crafters", 0, 1)
+    client:publish("homie/"..NODE_NAME.."/latch/$name", "Latch", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/latch/$type", "Gate Crafters", 1, 1)
     local properties = "locked,latched,restricted"
     if HAS_CONTACT then properties = properties .. ",closed" end
-    client:publish("homie/"..NODE_NAME.."/latch/$properties", properties, 0, 1)
+    client:publish("homie/"..NODE_NAME.."/latch/$properties", properties, 1, 1)
 
-    client:publish("homie/"..NODE_NAME.."/latch/locked/$name", "Lock Status", 0, 1)
-    client:publish("homie/"..NODE_NAME.."/latch/locked/$datatype", "boolean", 0, 1)
-    client:publish("homie/"..NODE_NAME.."/latch/locked/$settable", "true", 0, 1)
+    client:publish("homie/"..NODE_NAME.."/latch/locked/$name", "Lock Status", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/latch/locked/$datatype", "boolean", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/latch/locked/$settable", "true", 1, 1)
 
-    client:publish("homie/"..NODE_NAME.."/latch/latched/$name", "Latch Status", 0, 1)
-    client:publish("homie/"..NODE_NAME.."/latch/latched/$datatype", "boolean", 0, 1)
-    client:publish("homie/"..NODE_NAME.."/latch/latched/$settable", "true", 0, 1)
+    client:publish("homie/"..NODE_NAME.."/latch/latched/$name", "Latch Status", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/latch/latched/$datatype", "boolean", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/latch/latched/$settable", "true", 1, 1)
 
-    client:publish("homie/"..NODE_NAME.."/latch/restricted/$name", "Restricted (no push-to-exit) Status", 0, 1)
-    client:publish("homie/"..NODE_NAME.."/latch/restricted/$datatype", "boolean", 0, 1)
-    client:publish("homie/"..NODE_NAME.."/latch/restricted/$settable", "true", 0, 1)
-    client:publish("homie/"..NODE_NAME.."/latch/restricted", tostring(restricted), 0, 1)
+    client:publish("homie/"..NODE_NAME.."/latch/restricted/$name", "Restricted (no push-to-exit) Status", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/latch/restricted/$datatype", "boolean", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/latch/restricted/$settable", "true", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/latch/restricted", tostring(restricted), 1, 1)
 
     if HAS_CONTACT then
-      client:publish("homie/"..NODE_NAME.."/latch/closed/$name", "Closed Status", 0, 1)
-      client:publish("homie/"..NODE_NAME.."/latch/closed/$datatype", "boolean", 0, 1)
+      client:publish("homie/"..NODE_NAME.."/latch/closed/$name", "Closed Status", 1, 1)
+      client:publish("homie/"..NODE_NAME.."/latch/closed/$datatype", "boolean", 1, 1)
       closedChanged()
     end
 
@@ -71,41 +71,41 @@ m:on("connect", function(client)
 
   if HAS_COVER then
     lastRange = nil
-    client:publish("homie/"..NODE_NAME.."/cover/$name", "Pool Cover", 0, 1)
-    client:publish("homie/"..NODE_NAME.."/cover/$type", "Pool Cover", 0, 1)
-    client:publish("homie/"..NODE_NAME.."/cover/$properties", "locked,position,position-percent,range,state", 0, 1)
+    client:publish("homie/"..NODE_NAME.."/cover/$name", "Pool Cover", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/cover/$type", "Pool Cover", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/cover/$properties", "locked,position,position-percent,range,state", 1, 1)
 
-    client:publish("homie/"..NODE_NAME.."/cover/locked/$name", "Lock status (local control enabled)", 0, 1)
-    client:publish("homie/"..NODE_NAME.."/cover/locked/$datatype", "boolean", 0, 1)
-    client:publish("homie/"..NODE_NAME.."/cover/locked/$settable", "true", 0, 1)
+    client:publish("homie/"..NODE_NAME.."/cover/locked/$name", "Lock status (local control enabled)", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/cover/locked/$datatype", "boolean", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/cover/locked/$settable", "true", 1, 1)
 
-    client:publish("homie/"..NODE_NAME.."/cover/position/$name", "Position (absolute)", 0, 1)
-    client:publish("homie/"..NODE_NAME.."/cover/position/$datatype", "integer", 0, 1)
-    client:publish("homie/"..NODE_NAME.."/cover/position/$settable", "true", 0, 1)
+    client:publish("homie/"..NODE_NAME.."/cover/position/$name", "Position (absolute)", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/cover/position/$datatype", "integer", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/cover/position/$settable", "true", 1, 1)
   
-    client:publish("homie/"..NODE_NAME.."/cover/position-percent/$name", "Position (percent)", 0, 1)
-    client:publish("homie/"..NODE_NAME.."/cover/position-percent/$datatype", "float", 0, 1)
-    client:publish("homie/"..NODE_NAME.."/cover/position-percent/$unit", "%", 0, 1)
-    client:publish("homie/"..NODE_NAME.."/cover/position-percent/$format", "0:100", 0, 1)
-    client:publish("homie/"..NODE_NAME.."/cover/position-percent/$settable", "true", 0, 1)
+    client:publish("homie/"..NODE_NAME.."/cover/position-percent/$name", "Position (percent)", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/cover/position-percent/$datatype", "float", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/cover/position-percent/$unit", "%", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/cover/position-percent/$format", "0:100", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/cover/position-percent/$settable", "true", 1, 1)
   
-    client:publish("homie/"..NODE_NAME.."/cover/range/$name", "Range (absolute)", 0, 1)
-    client:publish("homie/"..NODE_NAME.."/cover/range/$datatype", "integer", 0, 1)
-    client:publish("homie/"..NODE_NAME.."/cover/range/$settable", "true", 0, 1)
+    client:publish("homie/"..NODE_NAME.."/cover/range/$name", "Range (absolute)", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/cover/range/$datatype", "integer", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/cover/range/$settable", "true", 1, 1)
   
-    client:publish("homie/"..NODE_NAME.."/cover/state/$name", "State", 0, 1)
-    client:publish("homie/"..NODE_NAME.."/cover/state/$datatype", "enum", 0, 1)
-    client:publish("homie/"..NODE_NAME.."/cover/state/$format", "stopped,opening,closing", 0, 1)
+    client:publish("homie/"..NODE_NAME.."/cover/state/$name", "State", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/cover/state/$datatype", "enum", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/cover/state/$format", "stopped,opening,closing", 1, 1)
   
     positionChanged()
     stateChanged()
     lockedChanged()
   end
 
-  client:publish("homie/"..NODE_NAME.."/$rssi", tostring(wifi.sta.getrssi()), 0, 1)
+  client:publish("homie/"..NODE_NAME.."/$rssi", tostring(wifi.sta.getrssi()), 1, 1)
   tmr.create():alarm(60000, tmr.ALARM_AUTO, function()
     if connected then
-      client:publish("homie/"..NODE_NAME.."/$rssi", tostring(wifi.sta.getrssi()), 0, 1)
+      client:publish("homie/"..NODE_NAME.."/$rssi", tostring(wifi.sta.getrssi()), 1, 1)
     end
   end)
 
@@ -134,7 +134,7 @@ m:on("connect", function(client)
   client:subscribe("homie/"..NODE_NAME.."/$config", 0)
   client:subscribe("homie/"..NODE_NAME.."/$debug", 0)
 
-  client:publish("homie/"..NODE_NAME.."/$state", "ready", 0, 1)
+  client:publish("homie/"..NODE_NAME.."/$state", "ready", 1, 1)
 end)
 
 local connectionFailed
@@ -172,7 +172,7 @@ if HAS_LATCH then
       return
     end
 
-    m:publish("homie/"..NODE_NAME.."/latch/locked", tostring(locked), 0, 1)
+    m:publish("homie/"..NODE_NAME.."/latch/locked", tostring(locked), 1, 1)
   end
 
   function latchedChanged()
@@ -180,7 +180,7 @@ if HAS_LATCH then
       return
     end
 
-    m:publish("homie/"..NODE_NAME.."/latch/latched", tostring(latched), 0, 1)
+    m:publish("homie/"..NODE_NAME.."/latch/latched", tostring(latched), 1, 1)
   end
 
   if HAS_CONTACT then
@@ -189,7 +189,7 @@ if HAS_LATCH then
         return
       end
 
-      m:publish("homie/"..NODE_NAME.."/latch/closed", tostring(closed), 0, 1)
+      m:publish("homie/"..NODE_NAME.."/latch/closed", tostring(closed), 1, 1)
     end
   end
 end
@@ -201,15 +201,15 @@ if HAS_COVER then
     end
 
     if position ~= nil then
-      m:publish("homie/"..NODE_NAME.."/cover/position", position, 0, 1)
+      m:publish("homie/"..NODE_NAME.."/cover/position", position, 1, 1)
       if range ~= nil then
-        m:publish("homie/"..NODE_NAME.."/cover/position-percent", position * 100 / range, 0, 1)
+        m:publish("homie/"..NODE_NAME.."/cover/position-percent", position * 100 / range, 1, 1)
       end
     end
     if range ~= lastRange then
       if range ~= nil then
-        m:publish("homie/"..NODE_NAME.."/cover/range", range, 0, 1)
-        m:publish("homie/"..NODE_NAME.."/cover/position/$format", "0:"..tostring(range), 0, 1)
+        m:publish("homie/"..NODE_NAME.."/cover/range", range, 1, 1)
+        m:publish("homie/"..NODE_NAME.."/cover/position/$format", "0:"..tostring(range), 1, 1)
       end
       lastRange = range
     end
@@ -228,7 +228,7 @@ if HAS_COVER then
     else
       stateString = "closing"
     end
-    m:publish("homie/"..NODE_NAME.."/cover/state", stateString, 0, 1)
+    m:publish("homie/"..NODE_NAME.."/cover/state", stateString, 1, 1)
   end
 
   function lockedChanged()
@@ -236,7 +236,7 @@ if HAS_COVER then
       return
     end
 
-    m:publish("homie/"..NODE_NAME.."/cover/locked", tostring(locked), 0, 1)
+    m:publish("homie/"..NODE_NAME.."/cover/locked", tostring(locked), 1, 1)
   end
 end
 
@@ -245,7 +245,7 @@ function triggerBell()
     return
   end
 
-  m:publish("homie/"..NODE_NAME.."/keypad/bell", "true", 0, 0)
+  m:publish("homie/"..NODE_NAME.."/keypad/bell", "true", 1, 0)
 end
 
 function receivedCode(code)
@@ -253,7 +253,7 @@ function receivedCode(code)
     return
   end
 
-  m:publish("homie/"..NODE_NAME.."/keypad/code", code, 0, 0)
+  m:publish("homie/"..NODE_NAME.."/keypad/code", code, 1, 0)
 end
 
 local function split(string, sep)
@@ -274,7 +274,7 @@ m:on("message", function(client, topic, message)
       if message == "false" then unlatch() end
     elseif topic == "homie/"..NODE_NAME.."/latch/restricted/set" then
       restricted = message == "true" and true or false
-      client:publish("homie/"..NODE_NAME.."/latch/restricted", tostring(restricted), 0, 1)
+      client:publish("homie/"..NODE_NAME.."/latch/restricted", tostring(restricted), 1, 1)
     end
   end
     
@@ -350,7 +350,7 @@ end)
 debug = false
 function log(message)
   if connected and debug then
-    m:publish("homie/"..NODE_NAME.."/$log", message, 0, 0)
+    m:publish("homie/"..NODE_NAME.."/$log", message, 1, 0)
   end
   print(message)
 end

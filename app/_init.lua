@@ -149,7 +149,7 @@ if HAS_COVER then
   end
 end
 
-VERSION = "1.2.3"
+VERSION = "1.2.4"
 
 if not NO_INIT then
 
