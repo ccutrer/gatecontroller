@@ -21,6 +21,8 @@ local target = nil
 position = nil
 range = nil
 
+local lockTimer = nil
+
 function stopMovement()
   if direction ~= nil then
     gpio.write(direction, gpio.HIGH)
@@ -31,13 +33,20 @@ function stopMovement()
       stateChanged()
     end
   end
+  if lockTimer ~= nil then
+    lockTimer:start()
+  end
 end
 
 function startMovement(dir, newTarget)
   stopMovement()
+  if lockTimer ~= nil then
+    lockTimer:stop()
+  end
   direction = dir
   -- default to targetting 0 position for open, or limit on close
   target = newTarget or (dir == 0 and 0 or nil)
+  log("starting movement towards "..tostring(direction).." target "..tostring(target))
   gpio.write(direction, gpio.LOW)
   state = 1
   if (stateChanged) then
@@ -172,12 +181,13 @@ function counterHit()
 end
 
 locked = true
-local lockTimer = nil
+local remoteUnlock = false
 
-function unlock()
+function unlock(remote)
   if locked then
     log("unlocking")
     locked = false
+    remoteUnlock = true
     gpio.write(8, gpio.LOW)
     lockTimer = tmr.create()
     lockTimer:alarm(5000, tmr.ALARM_SINGLE, function()
@@ -216,6 +226,10 @@ local function buttonPressed(pin)
 
   log("button press open: "..tostring(open).." close "..tostring(close))
 
+  -- ignore "no button press" when remotely triggered
+  if open == 1 and close == 1 and remoteUnlock then return end
+
+  remoteUnlock = false
   -- both buttons pressed; you're always allowed to stop
   -- even if locked (remote control)
   if open == 0 and close == 0 then
@@ -225,14 +239,11 @@ local function buttonPressed(pin)
   if locked == true then return end
 
   if open == 0 and close == 1 then
-    lockTimer:stop()
     startMovement(0)
   elseif open == 1 and close == 0 then
-    lockTimer:stop()
     startMovement(3)
   else
     stopMovement()
-    lockTimer:start()
   end
 end
 

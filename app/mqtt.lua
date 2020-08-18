@@ -281,16 +281,19 @@ m:on("message", function(client, topic, message)
   if HAS_COVER then
     if topic == "homie/"..NODE_NAME.."/cover/locked/set" then
       if message == "false" then
-        unlock()
+        unlock(false)
       else
         lock()
       end
     elseif topic == "homie/"..NODE_NAME.."/cover/position-percent/set" then
       if message == "UP" then
+        unlock(true)
         startMovement(0)
       elseif message == "DOWN" then
+        unlock(true)
         startMovement(3)
       elseif message == "STOP" then
+        unlock(true)
         stopMovement()
       else
         local targetPosition = tonumber(message)
@@ -298,6 +301,7 @@ m:on("message", function(client, topic, message)
           return
         end
         -- round to the closest integer stop
+        unlock(true)
         moveTo(math.floor(targetPosition * range / 100 + 0.5))
       end
     elseif topic == "homie/"..NODE_NAME.."/cover/position/set" then
@@ -312,6 +316,7 @@ m:on("message", function(client, topic, message)
       if position == nil then
         position = value
       else
+        unlock(true)
         moveTo(value)
       end
     elseif topic == "homie/"..NODE_NAME.."/cover/range/set" then
