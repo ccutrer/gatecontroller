@@ -106,22 +106,21 @@ if HAS_LATCH and HAS_COVER then
   node.restart()
 end
 
--- latch relay
 if HAS_LATCH then
   gpio.mode(0, gpio.OUTPUT)
   gpio.write(0, gpio.HIGH)
 end
--- 1 and 2 are for Weigand
--- bell
-gpio.mode(4, gpio.INT, gpio.PULLUP)
--- door relay (to confirm success to keypad)
-gpio.mode(5, gpio.OUTPUT)
-gpio.write(5, gpio.HIGH)
--- push-to-exit
+if HAS_KEYPAD then
+  -- 1 and 2 are for Weigand
+  -- bell
+  gpio.mode(4, gpio.INT, gpio.PULLUP)
+  -- door relay (to confirm success to keypad)
+  gpio.mode(5, gpio.OUTPUT)
+  gpio.write(5, gpio.HIGH)
+end
 if HAS_PUSH_TO_EXIT then
   gpio.mode(6, gpio.INT, gpio.PULLUP)
 end
--- contact sensor
 if HAS_CONTACT then
   gpio.mode(7, gpio.INT, gpio.PULLUP)
 end
@@ -149,15 +148,19 @@ if HAS_COVER then
   end
 end
 
-VERSION = "1.2.5"
+VERSION = "1.3.0"
 
 if not NO_INIT then
-
   if HAS_COVER then
     dofile("ammeter.lua")
     dofile("cover.lua")
   end
-  dofile("keypad.lua")
+  if HAS_KEYPAD then
+    dofile("keypad.lua")
+  end
+  if HAS_DIMMER then
+    dofile("dimmer.lua")
+  end
   dofile("mqtt.lua")
   dofile("ota_update.lua")
 end

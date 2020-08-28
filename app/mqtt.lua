@@ -14,30 +14,29 @@ m:on("connect", function(client)
   client:publish("homie/"..NODE_NAME.."/$fwversion", tostring(VERSION), 1, 1)
   client:publish("homie/"..NODE_NAME.."/$name", "Gate Controller", 1, 1)
   local nodes = "keypad"
-  if HAS_LATCH then
-    nodes = nodes .. ",latch"
-  end
-  if HAS_COVER then
-    nodes = nodes .. ",cover"
-  end
+  if HAS_LATCH then nodes = nodes .. ",latch" end
+  if HAS_COVER then nodes = nodes .. ",cover" end
+  if HAS_DIMMER then nodes = "dimmer" end
   client:publish("homie/"..NODE_NAME.."/$nodes", nodes, 1, 1)
 
-  client:publish("homie/"..NODE_NAME.."/keypad/$name", "Keypad", 1, 1)
-  client:publish("homie/"..NODE_NAME.."/keypad/$type", "Weigand", 1, 1)
-  client:publish("homie/"..NODE_NAME.."/keypad/$properties", "code,bell,success", 1, 1)
+  if HAS_KEYPAD then
+    client:publish("homie/"..NODE_NAME.."/keypad/$name", "Keypad", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/keypad/$type", "Weigand", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/keypad/$properties", "code,bell,success", 1, 1)
 
-  client:publish("homie/"..NODE_NAME.."/keypad/code/$name", "Received Code", 1, 1)
-  client:publish("homie/"..NODE_NAME.."/keypad/code/$datatype", "string", 1, 1)
-  client:publish("homie/"..NODE_NAME.."/keypad/code/$retained", "false", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/keypad/code/$name", "Received Code", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/keypad/code/$datatype", "string", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/keypad/code/$retained", "false", 1, 1)
 
-  client:publish("homie/"..NODE_NAME.."/keypad/bell/$name", "Bell Pressed", 1, 1)
-  client:publish("homie/"..NODE_NAME.."/keypad/bell/$datatype", "boolean", 1, 1)
-  client:publish("homie/"..NODE_NAME.."/keypad/bell/$retained", "false", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/keypad/bell/$name", "Bell Pressed", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/keypad/bell/$datatype", "boolean", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/keypad/bell/$retained", "false", 1, 1)
 
-  client:publish("homie/"..NODE_NAME.."/keypad/success/$name", "Signal Success", 1, 1)
-  client:publish("homie/"..NODE_NAME.."/keypad/success/$datatype", "boolean", 1, 1)
-  client:publish("homie/"..NODE_NAME.."/keypad/success/$retained", "false", 1, 1)
-  client:publish("homie/"..NODE_NAME.."/keypad/success/$settable", "true", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/keypad/success/$name", "Signal Success", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/keypad/success/$datatype", "boolean", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/keypad/success/$retained", "false", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/keypad/success/$settable", "true", 1, 1)
+  end
 
   if HAS_LATCH then
     client:publish("homie/"..NODE_NAME.."/latch/$name", "Latch", 1, 1)
@@ -102,6 +101,39 @@ m:on("connect", function(client)
     lockedChanged()
   end
 
+  if HAS_DIMMER then
+    client:publish("homie/"..NODE_NAME.."/dimmer/$name", "Dimmer", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/dimmer/$type", "PWM", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/dimmer/$properties", "target,min-dim,max-dim,dim-steps,dim-period", 1, 1)
+
+    client:publish("homie/"..NODE_NAME.."/dimmer/target/$name", "Target Brightness", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/dimmer/target/$datatype", "float", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/dimmer/target/$unit", "%", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/dimmer/target/$format", "0:100", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/dimmer/target/$settable", "true", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/dimmer/target", "0", 1, 1)
+
+    client:publish("homie/"..NODE_NAME.."/dimmer/min-dim/$name", "Minimum Brightness", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/dimmer/min-dim/$datatype", "integer", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/dimmer/min-dim/$format", "0:1023", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/dimmer/min-dim/$settable", "true", 1, 1)
+
+    client:publish("homie/"..NODE_NAME.."/dimmer/max-dim/$name", "Maximum Brightness", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/dimmer/max-dim/$datatype", "integer", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/dimmer/max-dim/$format", "0:1023", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/dimmer/max-dim/$settable", "true", 1, 1)
+
+    client:publish("homie/"..NODE_NAME.."/dimmer/dim-steps/$name", "How big each step is when dim-period is non-zero", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/dimmer/dim-steps/$datatype", "integer", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/dimmer/dim-steps/$format", "0:", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/dimmer/dim-steps/$settable", "true", 1, 1)
+
+    client:publish("homie/"..NODE_NAME.."/dimmer/dim-period/$name", "How long to wait between each step to reach the target", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/dimmer/dim-period/$datatype", "integer", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/dimmer/dim-period/$format", "0:", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/dimmer/dim-period/$settable", "true", 1, 1)
+  end
+
   client:publish("homie/"..NODE_NAME.."/$rssi", tostring(wifi.sta.getrssi()), 1, 1)
   tmr.create():alarm(60000, tmr.ALARM_AUTO, function()
     if connected then
@@ -115,6 +147,7 @@ m:on("connect", function(client)
     client:subscribe("homie/"..NODE_NAME.."/latch/latched/set", 0)
     client:subscribe("homie/"..NODE_NAME.."/latch/restricted/set", 0)
   end
+
   if HAS_COVER then
     -- use MQTT itself as our state store
     if position == nil then
@@ -128,6 +161,19 @@ m:on("connect", function(client)
     client:subscribe("homie/"..NODE_NAME.."/cover/position/set", 0)
     client:subscribe("homie/"..NODE_NAME.."/cover/position-percent/set", 0)
     client:subscribe("homie/"..NODE_NAME.."/cover/range/set", 0)
+  end
+
+  if HAS_DIMMER then
+    client:subscribe("homie/"..NODE_NAME.."/dimmer/min-dim", 0)
+    client:subscribe("homie/"..NODE_NAME.."/dimmer/max-dim", 0)
+    client:subscribe("homie/"..NODE_NAME.."/dimmer/dim-steps", 0)
+    client:subscribe("homie/"..NODE_NAME.."/dimmer/dim-period", 0)
+
+    client:subscribe("homie/"..NODE_NAME.."/dimmer/min-dim/set", 0)
+    client:subscribe("homie/"..NODE_NAME.."/dimmer/max-dim/set", 0)
+    client:subscribe("homie/"..NODE_NAME.."/dimmer/dim-steps/set", 0)
+    client:subscribe("homie/"..NODE_NAME.."/dimmer/dim-period/set", 0)
+    client:subscribe("homie/"..NODE_NAME.."/dimmer/target/set", 0)
   end
 
   client:subscribe("homie/"..NODE_NAME.."/$ota_update", 0)
@@ -335,9 +381,55 @@ m:on("message", function(client, topic, message)
     end
   end
 
-  if topic == "homie/"..NODE_NAME.."/keypad/success/set" then
-    if message == "true" then signalSuccess() end
-  elseif topic == "homie/"..NODE_NAME.."/$ota_update" then
+  if HAS_KEYPAD then
+    if topic == "homie/"..NODE_NAME.."/keypad/success/set" then
+      if message == "true" then signalSuccess() end
+    end
+  end
+
+  if HAS_DIMMER then
+    if topic == "homie/"..NODE_NAME.."/dimmer/target/set" then
+      local result = dimTo(tonumber(message))
+      client:publish("homie/"..NODE_NAME.."/dimmer/target", tostring(result), 1, 1)
+    elseif topic == "homie/"..NODE_NAME.."/dimmer/min-dim" then
+      minDim = tonumber(message)
+      client:unsubscribe("homie/"..NODE_NAME.."/dimmer/min-dim")
+    elseif topic == "homie/"..NODE_NAME.."/dimmer/min-dim/set" then
+      minDim = tonumber(message)
+      if minDim < 0 then minDim = 0 end
+      if minDim > 1023 then minDim = 1023 end
+      if minDim > maxDim then maxDim = minDim end
+      client:publish("homie/"..NODE_NAME.."/dimmer/min-dim", tostring(minDim), 1, 1)
+      client:publish("homie/"..NODE_NAME.."/dimmer/max-dim", tostring(maxDim), 1, 1)
+    elseif topic == "homie/"..NODE_NAME.."/dimmer/max-dim" then
+      maxDim = tonumber(message)
+      client:unsubscribe("homie/"..NODE_NAME.."/dimmer/max-dim")
+    elseif topic == "homie/"..NODE_NAME.."/dimmer/max-dim/set" then
+      maxDim = tonumber(message)
+      if maxDim < 0 then maxDim = 0 end
+      if maxDim > 1023 then maxDim = 1023 end
+      if minDim > maxDim then minDim = maxDim end
+      client:publish("homie/"..NODE_NAME.."/dimmer/min-dim", tostring(minDim), 1, 1)
+      client:publish("homie/"..NODE_NAME.."/dimmer/max-dim", tostring(maxDim), 1, 1)
+    elseif topic == "homie/"..NODE_NAME.."/dimmer/dim-steps" then
+      dimSteps = tonumber(message)
+      client:unsubscribe("homie/"..NODE_NAME.."/dimmer/dim-steps")
+    elseif topic == "homie/"..NODE_NAME.."/dimmer/dim-steps/set" then
+      dimSteps = tonumber(message)
+      if dimSteps < 0 then dimSteps = 0 end
+      client:publish("homie/"..NODE_NAME.."/dimmer/dim-steps", tostring(dimSteps), 1, 1)
+    elseif topic == "homie/"..NODE_NAME.."/dimmer/dim-period" then
+      dimPeriod = tonumber(message)
+      client:unsubscribe("homie/"..NODE_NAME.."/dimmer/dim-period")
+    elseif topic == "homie/"..NODE_NAME.."/dimmer/dim-period/set" then
+      local dimPeriod = tonumber(message)
+      if dimPeriod < 0 then dimPeriod = 0 end
+      changeDimPeriod(dimPeriod)
+      client:publish("homie/"..NODE_NAME.."/dimmer/dim-period", tostring(dimPeriod), 1, 1)
+    end
+  end
+
+  if topic == "homie/"..NODE_NAME.."/$ota_update" then
     local fields = split(tostring(message), "\n")
     local host, port, path = fields[1], fields[2], fields[3]
     otaUpdate(host, port, path)
