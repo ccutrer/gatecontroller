@@ -106,7 +106,7 @@ m:on("connect", function(client)
     client:publish("homie/"..NODE_NAME.."/dimmer/$type", "PWM", 1, 1)
     client:publish("homie/"..NODE_NAME.."/dimmer/$properties", "target,min-dim,max-dim,dim-steps,dim-period", 1, 1)
 
-    client:publish("homie/"..NODE_NAME.."/dimmer/target/$name", "Target Brightness", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/dimmer/target/$name", "Target Brightness (within the allowable range)", 1, 1)
     client:publish("homie/"..NODE_NAME.."/dimmer/target/$datatype", "float", 1, 1)
     client:publish("homie/"..NODE_NAME.."/dimmer/target/$unit", "%", 1, 1)
     client:publish("homie/"..NODE_NAME.."/dimmer/target/$format", "0:100", 1, 1)
@@ -115,12 +115,14 @@ m:on("connect", function(client)
 
     client:publish("homie/"..NODE_NAME.."/dimmer/min-dim/$name", "Minimum Brightness", 1, 1)
     client:publish("homie/"..NODE_NAME.."/dimmer/min-dim/$datatype", "integer", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/dimmer/min-dim/$unit", "%", 1, 1)
     client:publish("homie/"..NODE_NAME.."/dimmer/min-dim/$format", "0:1023", 1, 1)
     client:publish("homie/"..NODE_NAME.."/dimmer/min-dim/$settable", "true", 1, 1)
 
     client:publish("homie/"..NODE_NAME.."/dimmer/max-dim/$name", "Maximum Brightness", 1, 1)
     client:publish("homie/"..NODE_NAME.."/dimmer/max-dim/$datatype", "integer", 1, 1)
-    client:publish("homie/"..NODE_NAME.."/dimmer/max-dim/$format", "0:1023", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/dimmer/max-dim/$unit", "%", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/dimmer/max-dim/$format", "0:100", 1, 1)
     client:publish("homie/"..NODE_NAME.."/dimmer/max-dim/$settable", "true", 1, 1)
 
     client:publish("homie/"..NODE_NAME.."/dimmer/dim-steps/$name", "How big each step is when dim-period is non-zero", 1, 1)
@@ -397,7 +399,7 @@ m:on("message", function(client, topic, message)
     elseif topic == "homie/"..NODE_NAME.."/dimmer/min-dim/set" then
       minDim = tonumber(message)
       if minDim < 0 then minDim = 0 end
-      if minDim > 1023 then minDim = 1023 end
+      if minDim > 100 then minDim = 100 end
       if minDim > maxDim then maxDim = minDim end
       client:publish("homie/"..NODE_NAME.."/dimmer/min-dim", tostring(minDim), 1, 1)
       client:publish("homie/"..NODE_NAME.."/dimmer/max-dim", tostring(maxDim), 1, 1)
@@ -407,7 +409,7 @@ m:on("message", function(client, topic, message)
     elseif topic == "homie/"..NODE_NAME.."/dimmer/max-dim/set" then
       maxDim = tonumber(message)
       if maxDim < 0 then maxDim = 0 end
-      if maxDim > 1023 then maxDim = 1023 end
+      if maxDim > 100 then maxDim = 100 end
       if minDim > maxDim then minDim = maxDim end
       client:publish("homie/"..NODE_NAME.."/dimmer/min-dim", tostring(minDim), 1, 1)
       client:publish("homie/"..NODE_NAME.."/dimmer/max-dim", tostring(maxDim), 1, 1)

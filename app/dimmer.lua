@@ -1,21 +1,17 @@
 minDim = 0
-maxDim = 1023
+maxDim = 1000
 dimSteps = 10
 local dimPeriod = 10
 
 local current = 0
 local target = 0
 
-pwm.setup(1, 100, 0)
+pwm2.setup_pin_hz(1, 240, 100, 0)
+pwm2.start()
 
 local dimTimer = tmr.create()
 
 local function doStep()
-  if current == 0 then
-    log("turning on")
-    pwm.start(1)
-  end
-
   if dimPeriod == 0 then
     current = target
   else
@@ -28,13 +24,8 @@ local function doStep()
     end
   end
 
-  if current == 0 then
-    log("turning off")
-    pwm.stop(1)
-  else
-    log("setting duty "..tostring(current + minDim))
-    pwm.setduty(1, current + minDim)
-  end
+  log("setting duty "..tostring(current + minDim))
+  pwm2.set_duty(1, current + minDim)
 
   if current ~= target then
     dimTimer:start()
