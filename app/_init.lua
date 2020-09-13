@@ -148,7 +148,7 @@ if HAS_COVER then
   end
 end
 
-VERSION = "1.3.1"
+VERSION = "1.4.0"
 
 if not NO_INIT then
   if HAS_COVER then
@@ -160,6 +160,9 @@ if not NO_INIT then
   end
   if HAS_DIMMER then
     dofile("dimmer.lua")
+  end
+  if HAS_LUXMETER then
+    dofile("luxmeter.lua")
   end
   dofile("mqtt.lua")
   dofile("ota_update.lua")

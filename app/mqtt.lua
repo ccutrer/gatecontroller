@@ -17,6 +17,7 @@ m:on("connect", function(client)
   if HAS_LATCH then nodes = nodes .. ",latch" end
   if HAS_COVER then nodes = nodes .. ",cover" end
   if HAS_DIMMER then nodes = "dimmer" end
+  if HAS_LUXMETER then nodes = "lux" end
   client:publish("homie/"..NODE_NAME.."/$nodes", nodes, 1, 1)
 
   if HAS_KEYPAD then
@@ -136,6 +137,23 @@ m:on("connect", function(client)
     client:publish("homie/"..NODE_NAME.."/dimmer/dim-period/$settable", "true", 1, 1)
   end
 
+  if HAS_LUXMETER then
+    client:publish("homie/"..NODE_NAME.."/luxmeter/$name", "Dimmer", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/luxmeter/$type", "OPT3001", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/luxmeter/$properties", "lux,report-period", 1, 1)
+
+    client:publish("homie/"..NODE_NAME.."/luxmeter/lux/$name", "Luminance Flux", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/luxmeter/lux/$datatype", "float", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/luxmeter/lux/$unit", "lux", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/luxmeter/lux/$format", "0:83865.60", 1, 1)
+
+    client:publish("homie/"..NODE_NAME.."/luxmeter/report-period/$name", "Report Period", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/luxmeter/report-period/$datatype", "integer", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/luxmeter/report-period/$format", "1:", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/luxmeter/report-period/$settable", "true", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/luxmeter/report-period/$unit", "ms", 1, 1)
+  end
+
   client:publish("homie/"..NODE_NAME.."/$rssi", tostring(wifi.sta.getrssi()), 1, 1)
   tmr.create():alarm(60000, tmr.ALARM_AUTO, function()
     if connected then
@@ -176,6 +194,12 @@ m:on("connect", function(client)
     client:subscribe("homie/"..NODE_NAME.."/dimmer/dim-steps/set", 0)
     client:subscribe("homie/"..NODE_NAME.."/dimmer/dim-period/set", 0)
     client:subscribe("homie/"..NODE_NAME.."/dimmer/target/set", 0)
+  end
+
+  if HAS_LUXMETER then
+    client:subscribe("homie/"..NODE_NAME.."/luxmeter/report-period", 0)
+
+    client:subscribe("homie/"..NODE_NAME.."/luxmeter/report-period/set", 0)
   end
 
   client:subscribe("homie/"..NODE_NAME.."/$ota_update", 0)
@@ -285,6 +309,16 @@ if HAS_COVER then
     end
 
     m:publish("homie/"..NODE_NAME.."/cover/locked", tostring(locked), 1, 1)
+  end
+end
+
+if HAS_LUXMETER then
+  function luxChanged(lux)
+    if connected == false then
+      return
+    end
+
+    m:publish("homie/"..NODE_NAME.."/luxmeter/lux", tostring(lux), 1, 1)
   end
 end
 
@@ -428,6 +462,18 @@ m:on("message", function(client, topic, message)
       if dimPeriod < 0 then dimPeriod = 0 end
       changeDimPeriod(dimPeriod)
       client:publish("homie/"..NODE_NAME.."/dimmer/dim-period", tostring(dimPeriod), 1, 1)
+    end
+  end
+
+  if HAS_LUXMETER then
+    if topic == "homie/"..NODE_NAME.."/luxmeter/report-period/set" then
+      local period = tonumber(message)
+      changeReportPeriod(period)
+      client:publish("homie/"..NODE_NAME.."/luxmeter/report-period", tostring(period), 1, 1)
+    elseif topic == "homie/"..NODE_NAME.."/luxmeter/report-period" then
+      local period = tonumber(message)
+      changeReportPeriod(period)
+      client:unsubscribe("homie/"..NODE_NAME.."/luxmeter/report-period")
     end
   end
 
