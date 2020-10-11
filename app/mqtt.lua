@@ -17,7 +17,7 @@ m:on("connect", function(client)
   if HAS_LATCH then nodes = nodes .. ",latch" end
   if HAS_COVER then nodes = nodes .. ",cover" end
   if HAS_DIMMER then nodes = "dimmer" end
-  if HAS_LUXMETER then nodes = "lux" end
+  if HAS_LUXMETER then nodes = "luxmeter" end
   client:publish("homie/"..NODE_NAME.."/$nodes", nodes, 1, 1)
 
   if HAS_KEYPAD then
@@ -228,6 +228,7 @@ end
 local function connectionFailed(client, reason)
   connected = false
   print("connection failed", reason)
+  client:close()
   reconnect(client)
 end
 
