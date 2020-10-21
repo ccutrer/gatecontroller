@@ -490,6 +490,9 @@ m:on("message", function(client, topic, message)
   elseif topic == "homie/"..NODE_NAME.."/$debug" then
     debug = message == "true"
     log("debug set to "..tostring(debug))
+  elseif topic == "homie/"..NODE_NAME.."/$restart" and message == "true" then
+    log("forcing restart")
+    node.restart()
   end
 end)
 
