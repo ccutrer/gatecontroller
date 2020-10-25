@@ -148,7 +148,7 @@ if HAS_COVER then
   end
 end
 
-VERSION = "1.4.2"
+VERSION = "1.4.3"
 
 if not NO_INIT then
   if HAS_COVER then

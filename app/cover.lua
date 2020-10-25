@@ -97,7 +97,7 @@ function ampsUpdated()
   end
 
   -- failsafe
-  if currentAmps > 16 then
+  if currentAmps > 18 then
     stopMovement()
     log("overload abort")
   end
@@ -136,7 +136,7 @@ function ampsUpdated()
       end
     end
   elseif state == 3 then
-    if currentAmps > 8 then
+    if currentAmps > 9 then
       if direction == 3 then
         -- automatically set range if we hit the end
         -- AND we actually know where we are
