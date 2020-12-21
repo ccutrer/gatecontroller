@@ -71,9 +71,10 @@ m:on("connect", function(client)
 
   if HAS_COVER then
     lastRange = nil
+    lastTarget = nil
     client:publish("homie/"..NODE_NAME.."/cover/$name", "Pool Cover", 1, 1)
     client:publish("homie/"..NODE_NAME.."/cover/$type", "Pool Cover", 1, 1)
-    client:publish("homie/"..NODE_NAME.."/cover/$properties", "locked,position,position-percent,range,state", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/cover/$properties", "locked,position,position-percent,target,target-percent,range,state", 1, 1)
 
     client:publish("homie/"..NODE_NAME.."/cover/locked/$name", "Lock status (local control enabled)", 1, 1)
     client:publish("homie/"..NODE_NAME.."/cover/locked/$datatype", "boolean", 1, 1)
@@ -82,13 +83,22 @@ m:on("connect", function(client)
     client:publish("homie/"..NODE_NAME.."/cover/position/$name", "Position (absolute)", 1, 1)
     client:publish("homie/"..NODE_NAME.."/cover/position/$datatype", "integer", 1, 1)
     client:publish("homie/"..NODE_NAME.."/cover/position/$settable", "true", 1, 1)
-  
+
     client:publish("homie/"..NODE_NAME.."/cover/position-percent/$name", "Position (percent)", 1, 1)
     client:publish("homie/"..NODE_NAME.."/cover/position-percent/$datatype", "float", 1, 1)
     client:publish("homie/"..NODE_NAME.."/cover/position-percent/$unit", "%", 1, 1)
     client:publish("homie/"..NODE_NAME.."/cover/position-percent/$format", "0:100", 1, 1)
     client:publish("homie/"..NODE_NAME.."/cover/position-percent/$settable", "true", 1, 1)
   
+    client:publish("homie/"..NODE_NAME.."/cover/target/$name", "Target Position (absolute)", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/cover/target/$datatype", "integer", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/cover/target/$settable", "true", 1, 1)
+  
+    client:publish("homie/"..NODE_NAME.."/cover/target-percent/$name", "Target Position (percent)", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/cover/target-percent/$datatype", "float", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/cover/target-percent/$unit", "%", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/cover/target-percent/$format", "0:100", 1, 1)
+
     client:publish("homie/"..NODE_NAME.."/cover/range/$name", "Range (absolute)", 1, 1)
     client:publish("homie/"..NODE_NAME.."/cover/range/$datatype", "integer", 1, 1)
     client:publish("homie/"..NODE_NAME.."/cover/range/$settable", "true", 1, 1)
@@ -205,6 +215,7 @@ m:on("connect", function(client)
   client:subscribe("homie/"..NODE_NAME.."/$ota_update", 0)
   client:subscribe("homie/"..NODE_NAME.."/$config", 0)
   client:subscribe("homie/"..NODE_NAME.."/$debug", 0)
+  client:subscribe("homie/"..NODE_NAME.."/$restart", 0)
 
   client:publish("homie/"..NODE_NAME.."/$state", "ready", 1, 1)
 end)
@@ -286,6 +297,16 @@ if HAS_COVER then
       end
       lastRange = range
     end
+    local newTarget = target or range
+    if newTarget ~= lastTarget then
+      if newTarget ~= nil then
+        m:publish("homie/"..NODE_NAME.."/cover/target", newTarget, 1, 1)
+        if range ~= nil then
+          m:publish("homie/"..NODE_NAME.."/cover/target-percent", newTarget * 100 / range, 1, 1)
+        end
+      end
+      lastTarget = newTarget
+    end
   end
 
   function stateChanged()
@@ -360,7 +381,7 @@ m:on("message", function(client, topic, message)
       client:publish("homie/"..NODE_NAME.."/latch/restricted", tostring(restricted), 1, 1)
     end
   end
-    
+
   if HAS_COVER then
     if topic == "homie/"..NODE_NAME.."/cover/locked/set" then
       if message == "false" then
@@ -380,12 +401,27 @@ m:on("message", function(client, topic, message)
         stopMovement()
       else
         local targetPosition = tonumber(message)
-        if targetPosition == nil or range == nil then
+        if targetPosition == nil then
           return
         end
-        -- round to the closest integer stop
+
         unlock(true)
-        moveTo(math.floor(targetPosition * range / 100 + 0.5))
+        if range == nil then
+          if position == nil then
+            if targetPosition == 0 then
+              startMovement(0)
+            else
+              startMovement(3)
+            end
+          elseif targetPosition < position then
+            startMovement(0)
+          else
+            startMovement(3)
+          end
+        else
+          -- round to the closest integer stop
+          moveTo(math.floor(targetPosition * range / 100 + 0.5))
+        end
       end
     elseif topic == "homie/"..NODE_NAME.."/cover/position/set" then
       if message == "" then

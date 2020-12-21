@@ -33,7 +33,7 @@ ammeterTimer:alarm(10, tmr.ALARM_AUTO, function()
   buffer_idx = buffer_idx + 1
   if #ammeterReadings == 20 and buffer_idx % 10 == 0 then
     currentAmps = getAmps()
-    if currentAmps > 6 then
+    if currentAmps > 5 then
       log("current amps "..tostring(currentAmps))
     end
     if (ampsUpdated) then

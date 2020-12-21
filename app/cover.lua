@@ -15,13 +15,14 @@ state = 0
 -- 0 - open
 -- 3 - close
 direction = nil
-local target = nil
 
 -- 0 open
 position = nil
 range = nil
+target = nil
 
 local lockTimer = nil
+local movementTimer = nil
 
 function stopMovement()
   if direction ~= nil then
@@ -35,6 +36,11 @@ function stopMovement()
   end
   if lockTimer ~= nil then
     lockTimer:start()
+  end
+  if movementTimer ~= nil then
+    movementTimer:stop()
+    movementTimer:unregister()
+    movementTimer = nil
   end
 end
 
@@ -111,13 +117,13 @@ function ampsUpdated()
           stopMovement()
           log("aborting because startup surge took too long")
         end
-      end)    
+      end)
     end
   elseif state == 2 then
     if currentAmps < 2 then
       stopMovement()
       log("power cut after startup surge??")
-    elseif currentAmps < 7 then
+    elseif currentAmps < 9 then
       state = 3
       if (stateChanged) then
         stateChanged()
@@ -129,18 +135,20 @@ function ampsUpdated()
           positionChanged()
         end
       elseif position == range and direction == 0 and not HAS_COUNTER then
-        position = range - 1
+        if range ~= nil then
+          position = range - 1
+        end
         if (positionChanged) then
           positionChanged()
         end
       end
     end
   elseif state == 3 then
-    if currentAmps > 9 then
+    if currentAmps > 12 then
       if direction == 3 then
         -- automatically set range if we hit the end
         -- AND we actually know where we are
-        if position ~= nil and position ~= 0 and HAS_COUNTER then
+        if position ~= nil and position > 2 and HAS_COUNTER then
           range = position
         end
         position = range
@@ -167,16 +175,35 @@ function counterHit()
     log("cover moved while motor not moving??")
     return
   end
+  log("counter hit")
 
   if position ~= nil then
     position = position + (direction == 3 and 1 or -1)
     if positionChanged then
       positionChanged()
     end
-    if target ~= nil and position == target then
+    if target ~= nil and target ~= 0 and position == target then
       log("target reached")
       stopMovement()
     end
+  end
+
+  if movementTimer == nil then
+    log("starting movement timer")
+    movementTimer = tmr.create()
+    movementTimer:alarm(2000, tmr.ALARM_SINGLE, function()
+      if state ~= 0 then
+        log("aborting because no movement detected")
+        stopMovement()
+      else
+        log("movement timer hit when not running?")
+        movementTimer = nil
+      end
+    end)
+  else
+    log("restarting movement timer")
+    movementTimer:stop()
+    movementTimer:start()
   end
 end
 
@@ -190,7 +217,7 @@ function unlock(remote)
     remoteUnlock = true
     gpio.write(8, gpio.LOW)
     lockTimer = tmr.create()
-    lockTimer:alarm(5000, tmr.ALARM_SINGLE, function()
+    lockTimer:alarm(10000, tmr.ALARM_SINGLE, function()
       log("timed out")
       lockTimer = nil
       lock()
@@ -251,13 +278,16 @@ gpio.trig(6, "both", function(level) buttonPressed(6, level) end)
 gpio.trig(7, "both", function(level) buttonPressed(7, level) end)
 
 local last = 0
-local delay = 250000 -- 250ms * 1000 as tmr.now() has μs resolution
+local delay = 100000 -- 100ms * 1000 as tmr.now() has μs resolution
 
 local function debounceCounter()
   local now = tmr.now()
   local delta = now - last
   if delta < 0 then delta = delta + 2147483647 end
-  if delta < delay then return end
+  if delta < delay then
+    log("discarding counter hit of "..tostring(delta))
+    return
+  end
 
   last = now
 
