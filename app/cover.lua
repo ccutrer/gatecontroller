@@ -29,10 +29,9 @@ function stopMovement()
     gpio.write(direction, gpio.HIGH)
     state = 0
     direction = nil
-    target = nil
-    if (stateChanged) then
-      stateChanged()
-    end
+    target = position
+    if (positionChanged) then positionChanged() end
+    if (stateChanged) then stateChanged() end
   end
   if lockTimer ~= nil then
     lockTimer:start()
@@ -148,15 +147,19 @@ function ampsUpdated()
       if direction == 3 then
         -- automatically set range if we hit the end
         -- AND we actually know where we are
-        if position ~= nil and position > 2 and HAS_COUNTER then
+        if HAS_COUNTER and position ~= nil and
+          (range == nil or range - position < 5) then
           range = position
         end
         position = range
       else
-        if range ~= nil and position ~= nil and range ~= position and HAS_COUNTER then
-          range = range - position
+        if HAS_COUNTER and position ~= nil and
+          position < 5 then
+          position = 0
+          if range ~= nil and range ~= position then
+            range = range - position
+          end
         end
-        position = 0
       end
       if positionChanged then
         positionChanged()

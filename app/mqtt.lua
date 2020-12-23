@@ -424,7 +424,7 @@ m:on("message", function(client, topic, message)
         end
       end
     elseif topic == "homie/"..NODE_NAME.."/cover/position/set" then
-      if message == "" then
+      if message == nil then
         position = nil
         return
       end
@@ -434,20 +434,25 @@ m:on("message", function(client, topic, message)
       end
       if position == nil then
         position = value
+        positionChanged()
       else
         unlock(true)
         moveTo(value)
       end
     elseif topic == "homie/"..NODE_NAME.."/cover/range/set" then
-      range = tonumber(message)
+      if message == nil then
+        range = nil
+      else
+        range = tonumber(message)
+      end
       positionChanged()
     elseif topic == "homie/"..NODE_NAME.."/cover/range" then
-      if range == nil then
+      if range == nil and message ~= nil then
         range = tonumber(message)
         client:unsubscribe("homie/"..NODE_NAME.."/cover/range")
       end
     elseif topic == "homie/"..NODE_NAME.."/cover/position" then
-      if position == nil then
+      if position == nil and message ~= nil then
         position = tonumber(message)
         client:unsubscribe("homie/"..NODE_NAME.."/cover/position")
       end
