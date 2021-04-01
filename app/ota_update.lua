@@ -8,7 +8,7 @@
 local fullPath, host, port
 local image = "LFS.img"
 local doRequest, firstRec, subsRec, finalise
-local n, total, size = 0, 0
+local n, total, size = 0, 0, 0
 
 doRequest = function(socket, hostIP) -- luacheck: no unused
   if hostIP then
