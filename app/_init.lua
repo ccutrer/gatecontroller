@@ -148,7 +148,7 @@ if HAS_COVER then
   end
 end
 
-VERSION = "1.5.0"
+VERSION = "1.5.1"
 
 wifi.sta.autoconnect(0)
 
@@ -174,6 +174,12 @@ if not NO_INIT then
       node.restart()
     end)
     wifi.sta.connect()
+    -- just restart if we never got a connection within 5 minutes
+    tmr.create():alarm(300000, tmr.ALARM_SINGLE, function()
+      if wifi.sta.status() ~= wifi.STA_GOT_IP then
+        node.restart()
+      end
+    end)
   end
   dofile("ota_update.lua")
 end
