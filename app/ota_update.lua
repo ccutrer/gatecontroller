@@ -28,9 +28,12 @@ doRequest = function(socket, hostIP) -- luacheck: no unused
         sck:send(request)
       end)
     con:on("disconnection",function()
+      log("could not connect to "..host)
       node.restart()
     end)
     con:connect(port,hostIP)
+  else
+    log("could not get hostIP for "..host)
   end
 end
 

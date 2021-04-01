@@ -17,6 +17,8 @@ loop do
   # I/O objects. (In fact, TCPSocket is a subclass of IO.)
   socket = server.accept
 
+  STDERR.puts "new connection"
+
   file.seek(0)
 
   # Read the first line of the request (the Request-Line)

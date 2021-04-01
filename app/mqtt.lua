@@ -224,8 +224,9 @@ local connectionFailed
 
 local function reconnect(client)
   local delay = 0
-  if connectionAttempts == 7 then
+  if connectionAttempts == 6 then
     node.restart()
+    return
   else
     delay = 3 ^ connectionAttempts * 1000 - 1000 + 1
   end

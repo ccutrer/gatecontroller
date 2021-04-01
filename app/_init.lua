@@ -148,7 +148,9 @@ if HAS_COVER then
   end
 end
 
-VERSION = "1.4.5"
+VERSION = "1.5.0"
+
+wifi.sta.autoconnect(0)
 
 if not NO_INIT then
   if HAS_COVER then
@@ -165,7 +167,13 @@ if not NO_INIT then
     dofile("luxmeter.lua")
   end
   if MQTT_HOST then
-    dofile("mqtt.lua")
+    wifi.eventmon.register(wifi.eventmon.STA_GOT_IP, function()
+      dofile("mqtt.lua")
+    end)
+    wifi.eventmon.register(wifi.eventmon.STA_DISCONNECTED, function()
+      node.restart()
+    end)
+    wifi.sta.connect()
   end
   dofile("ota_update.lua")
 end
