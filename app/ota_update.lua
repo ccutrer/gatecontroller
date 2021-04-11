@@ -72,6 +72,7 @@ finalise = function(sck)
   sck:close()
   local s = file.stat(image)
   if (s and size == s.size) then
+    wifi.eventmon.register(wifi.eventmon.STA_DISCONNECTED, nil)
     wifi.setmode(wifi.NULLMODE, false)
     collectgarbage();collectgarbage()
       -- run as separate task to maximise RAM available

@@ -101,58 +101,58 @@ end
 
 wifi.sta.sethostname(NODE_NAME)
 
-if HAS_LATCH and HAS_COVER then
-  print("can't have both cover and latch!\n")
-  node.restart()
-end
-
-if HAS_LATCH then
-  gpio.mode(0, gpio.OUTPUT)
-  gpio.write(0, gpio.HIGH)
-end
-if HAS_KEYPAD then
-  -- 1 and 2 are for Weigand
-  -- bell
-  gpio.mode(4, gpio.INT, gpio.PULLUP)
-  -- door relay (to confirm success to keypad)
-  gpio.mode(5, gpio.OUTPUT)
-  gpio.write(5, gpio.HIGH)
-end
-if HAS_PUSH_TO_EXIT then
-  gpio.mode(6, gpio.INT, gpio.PULLUP)
-end
-if HAS_CONTACT then
-  gpio.mode(7, gpio.INT, gpio.PULLUP)
-end
-
-if HAS_COVER then
-  -- make sure A0 is initialized properly
-  if adc.force_init_mode(adc.INIT_ADC) then
-    node.restart()
-  end
-  -- open and close relays
-  gpio.mode(0, gpio.OUTPUT)
-  gpio.write(0, gpio.HIGH)
-  gpio.mode(3, gpio.OUTPUT)
-  gpio.write(3, gpio.HIGH)
-  -- open/close buttons
-  gpio.mode(6, gpio.INT, gpio.PULLUP)
-  gpio.mode(7, gpio.INT, gpio.PULLUP)
-  -- relay to light up open/close buttons
-  gpio.mode(8, gpio.OUTPUT)
-  gpio.write(8, gpio.HIGH)
-
-  if HAS_COUNTER then
-    -- counter contact
-    gpio.mode(9, gpio.INT, gpio.PULLUP)
-  end
-end
-
-VERSION = "1.5.1"
-
-wifi.sta.autoconnect(0)
+VERSION = "1.5.2"
 
 if not NO_INIT then
+  if HAS_LATCH and HAS_COVER then
+    print("can't have both cover and latch!\n")
+    node.restart()
+  end
+
+  if HAS_LATCH then
+    gpio.mode(0, gpio.OUTPUT)
+    gpio.write(0, gpio.HIGH)
+  end
+  if HAS_KEYPAD then
+    -- 1 and 2 are for Weigand
+    -- bell
+    gpio.mode(4, gpio.INT, gpio.PULLUP)
+    -- door relay (to confirm success to keypad)
+    gpio.mode(5, gpio.OUTPUT)
+    gpio.write(5, gpio.HIGH)
+  end
+  if HAS_PUSH_TO_EXIT then
+    gpio.mode(6, gpio.INT, gpio.PULLUP)
+  end
+  if HAS_CONTACT then
+    gpio.mode(7, gpio.INT, gpio.PULLUP)
+  end
+
+  if HAS_COVER then
+    -- make sure A0 is initialized properly
+    if adc.force_init_mode(adc.INIT_ADC) then
+      node.restart()
+    end
+    -- open and close relays
+    gpio.mode(0, gpio.OUTPUT)
+    gpio.write(0, gpio.HIGH)
+    gpio.mode(3, gpio.OUTPUT)
+    gpio.write(3, gpio.HIGH)
+    -- open/close buttons
+    gpio.mode(6, gpio.INT, gpio.PULLUP)
+    gpio.mode(7, gpio.INT, gpio.PULLUP)
+    -- relay to light up open/close buttons
+    gpio.mode(8, gpio.OUTPUT)
+    gpio.write(8, gpio.HIGH)
+
+    if HAS_COUNTER then
+      -- counter contact
+      gpio.mode(9, gpio.INT, gpio.PULLUP)
+    end
+  end
+
+  wifi.sta.autoconnect(0)
+
   if HAS_COVER then
     dofile("ammeter.lua")
     dofile("cover.lua")
@@ -167,16 +167,30 @@ if not NO_INIT then
     dofile("luxmeter.lua")
   end
   if MQTT_HOST then
+    wifi.eventmon.register(wifi.eventmon.STA_CONNECTED, function()
+      print("connected to wifi")
+    end)
     wifi.eventmon.register(wifi.eventmon.STA_GOT_IP, function()
+      print("got IP")
       dofile("mqtt.lua")
+      wifi.eventmon.register(wifi.eventmon.STA_GOT_IP, function()
+        print("got IP again")
+      end)
     end)
-    wifi.eventmon.register(wifi.eventmon.STA_DISCONNECTED, function()
-      node.restart()
+    wifi.eventmon.register(wifi.eventmon.STA_DHCP_TIMEOUT, function()
+      print("DHCP timeout")
+      wifi.sta.disconnect()
     end)
+    wifi.eventmon.register(wifi.eventmon.STA_DISCONNECTED, function(t)
+      print("got disconnect: "..tostring(t.reason))
+      wifi.sta.connect()
+    end)
+
     wifi.sta.connect()
-    -- just restart if we never got a connection within 5 minutes
-    tmr.create():alarm(300000, tmr.ALARM_SINGLE, function()
-      if wifi.sta.status() ~= wifi.STA_GOT_IP then
+    -- just restart if we never got a connection within 10 minutes
+    tmr.create():alarm(10 * 60 * 1000, tmr.ALARM_SINGLE, function()
+      print("status: "..tostring(wifi.sta.status()).."\n")
+      if wifi.sta.status() ~= wifi.STA_GOTIP then
         node.restart()
       end
     end)

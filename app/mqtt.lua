@@ -225,6 +225,7 @@ local connectionFailed
 local function reconnect(client)
   local delay = 0
   if connectionAttempts == 6 then
+    print("Too many reconnect attempts; restarting")
     node.restart()
     return
   else
@@ -232,14 +233,21 @@ local function reconnect(client)
   end
 
   connectionAttempts = connectionAttempts + 1
+  print("connection attempt "..tostring(connectionAttempts).." waiting "..tostring(delay / 1000).."s")
   tmr.create():alarm(delay, tmr.ALARM_SINGLE, function()
-    client:connect(MQTT_HOST, MQTT_PORT, MQTT_SECURE, nil, connectionFailed)
+    if (wifi.sta.status() == wifi.STA_GOTIP) then
+      print("reconnecting to MQTT")
+      client:connect(MQTT_HOST, MQTT_PORT, MQTT_SECURE, nil, connectionFailed)
+    else
+      print("network not connected at retry time; trying again later")
+      reconnect(client)
+    end
   end)
 end
 
 local function connectionFailed(client, reason)
   connected = false
-  print("connection failed", reason)
+  print("connection failed: "..tostring(reason))
   client:close()
   reconnect(client)
 end
