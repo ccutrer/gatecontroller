@@ -127,6 +127,7 @@ if HAS_PUSH_TO_EXIT then
   gpio.trig(6, "both", function()
     triggered = gpio.read(6) == 0
     log("exit requested: " .. tostring(triggered))
+    if triggered then triggerPushToExit() end
     if triggered and not restricted then unlatch() end
   end)
 end

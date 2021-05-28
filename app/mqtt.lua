@@ -44,6 +44,7 @@ m:on("connect", function(client)
     client:publish("homie/"..NODE_NAME.."/latch/$type", "Gate Crafters", 1, 1)
     local properties = "locked,latched,restricted"
     if HAS_CONTACT then properties = properties .. ",closed" end
+    if HAS_PUSH_TO_EXIT then properties = properties .. ",push-to-exit" end
     client:publish("homie/"..NODE_NAME.."/latch/$properties", properties, 1, 1)
 
     client:publish("homie/"..NODE_NAME.."/latch/locked/$name", "Lock Status", 1, 1)
@@ -63,6 +64,12 @@ m:on("connect", function(client)
       client:publish("homie/"..NODE_NAME.."/latch/closed/$name", "Closed Status", 1, 1)
       client:publish("homie/"..NODE_NAME.."/latch/closed/$datatype", "boolean", 1, 1)
       closedChanged()
+    end
+
+    if HAS_PUSH_TO_EXIT then
+      client:publish("homie/"..NODE_NAME.."/latch/push-to-exit/$name", "Push-to-Exit Pressed", 1, 1)
+      client:publish("homie/"..NODE_NAME.."/latch/push-to-exit/$datatype", "boolean", 1, 1)
+      client:publish("homie/"..NODE_NAME.."/latch/push-to-exit/$retained", "false", 1, 1)
     end
 
     lockedChanged()
@@ -359,6 +366,14 @@ function triggerBell()
   end
 
   m:publish("homie/"..NODE_NAME.."/keypad/bell", "true", 1, 0)
+end
+
+function triggerPushToExit()
+  if connected == false then
+    return
+  end
+
+  m:publish("homie/"..NODE_NAME.."/latch/push-to-exit", "true", 1, 0)
 end
 
 function receivedCode(code)
