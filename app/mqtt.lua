@@ -10,6 +10,7 @@ m:on("connect", function(client)
   connected = true
   connectionAttempts = 0
 
+  client:publish("homie/"..NODE_NAME.."/$state", "init", 1, 1)
   client:publish("homie/"..NODE_NAME.."/$homie", "4.0.0", 1, 1)
   client:publish("homie/"..NODE_NAME.."/$fwversion", tostring(VERSION), 1, 1)
   client:publish("homie/"..NODE_NAME.."/$name", "Gate Controller", 1, 1)
