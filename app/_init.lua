@@ -101,7 +101,7 @@ end
 
 wifi.sta.sethostname(NODE_NAME)
 
-VERSION = "1.5.2"
+VERSION = "1.5.3"
 
 if not NO_INIT then
   if HAS_LATCH and HAS_COVER then
@@ -167,6 +167,17 @@ if not NO_INIT then
     dofile("luxmeter.lua")
   end
   if MQTT_HOST then
+    local connectWifi = function()
+      wifi.sta.connect()
+      -- just restart if we never got a connection within 10 minutes
+      tmr.create():alarm(10 * 60 * 1000, tmr.ALARM_SINGLE, function()
+        print("status: "..tostring(wifi.sta.status()).."\n")
+        if wifi.sta.status() ~= wifi.STA_GOTIP then
+          node.restart()
+        end
+      end)
+    end
+
     wifi.eventmon.register(wifi.eventmon.STA_CONNECTED, function()
       print("connected to wifi")
     end)
@@ -177,23 +188,12 @@ if not NO_INIT then
         print("got IP again")
       end)
     end)
-    wifi.eventmon.register(wifi.eventmon.STA_DHCP_TIMEOUT, function()
-      print("DHCP timeout")
-      wifi.sta.disconnect()
-    end)
     wifi.eventmon.register(wifi.eventmon.STA_DISCONNECTED, function(t)
       print("got disconnect: "..tostring(t.reason))
-      wifi.sta.connect()
+      connectWifi()
     end)
 
-    wifi.sta.connect()
-    -- just restart if we never got a connection within 10 minutes
-    tmr.create():alarm(10 * 60 * 1000, tmr.ALARM_SINGLE, function()
-      print("status: "..tostring(wifi.sta.status()).."\n")
-      if wifi.sta.status() ~= wifi.STA_GOTIP then
-        node.restart()
-      end
-    end)
+    connectWifi()
   end
   dofile("ota_update.lua")
 end
