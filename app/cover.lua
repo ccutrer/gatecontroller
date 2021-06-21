@@ -246,12 +246,12 @@ end
 local open = 1
 local close = 1
 
-local function buttonPressed(pin)
+local function buttonPressed(pin, value)
   if pin == 6 then
-    open = gpio.read(6)
+    open = value
   end
   if pin == 7 then
-    close = gpio.read(7)
+    close = value
   end
 
   log("button press open: "..tostring(open).." close "..tostring(close))
@@ -277,8 +277,31 @@ local function buttonPressed(pin)
   end
 end
 
-gpio.trig(6, "both", function(level) buttonPressed(6, level) end)
-gpio.trig(7, "both", function(level) buttonPressed(7, level) end)
+local function buttonDebounce(pin)
+  local currentValue = 1
+  local upTimer = tmr.create()
+  upTimer:register(50, tmr.ALARM_SEMI, function()
+    currentValue = 1
+    buttonPressed(pin, currentValue)
+  end)
+
+  return function(...)
+    local newValue = gpio.read(pin)
+    -- the transition down is instant
+    if newValue == 0 and currentValue == 1 then
+      currentValue = 0
+      return buttonPressed(pin, currentValue)
+    end
+    upTimer:stop()
+
+    if newValue == 1 then
+      upTimer:start()
+    end
+  end
+end
+
+gpio.trig(6, "both", buttonDebounce(6))
+gpio.trig(7, "both", buttonDebounce(7))
 
 local last = 0
 local delay = 100000 -- 100ms * 1000 as tmr.now() has μs resolution
