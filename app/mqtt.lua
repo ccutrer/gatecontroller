@@ -106,6 +106,7 @@ m:on("connect", function(client)
     client:publish("homie/"..NODE_NAME.."/cover/target-percent/$datatype", "float", 1, 1)
     client:publish("homie/"..NODE_NAME.."/cover/target-percent/$unit", "%", 1, 1)
     client:publish("homie/"..NODE_NAME.."/cover/target-percent/$format", "0:100", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/cover/target-percent/$settable", "true", 1, 1)
 
     client:publish("homie/"..NODE_NAME.."/cover/range/$name", "Range (absolute)", 1, 1)
     client:publish("homie/"..NODE_NAME.."/cover/range/$datatype", "integer", 1, 1)
@@ -199,6 +200,8 @@ m:on("connect", function(client)
     client:subscribe("homie/"..NODE_NAME.."/cover/position/set", 0)
     client:subscribe("homie/"..NODE_NAME.."/cover/position-percent/set", 0)
     client:subscribe("homie/"..NODE_NAME.."/cover/range/set", 0)
+    client:subscribe("homie/"..NODE_NAME.."/cover/target/set", 0)
+    client:subscribe("homie/"..NODE_NAME.."/cover/target-percent/set", 0)
   end
 
   if HAS_DIMMER then
@@ -414,7 +417,8 @@ m:on("message", function(client, topic, message)
       else
         lock()
       end
-    elseif topic == "homie/"..NODE_NAME.."/cover/position-percent/set" then
+    elseif topic == "homie/"..NODE_NAME.."/cover/target-percent/set" or
+      topic == "homie/"..NODE_NAME.."/cover/position-percent/set" then
       if message == "UP" then
         unlock(true)
         startMovement(0)
@@ -448,6 +452,22 @@ m:on("message", function(client, topic, message)
           moveTo(math.floor(targetPosition * range / 100 + 0.5))
         end
       end
+    elseif topic == "homie/"..NODE_NAME.."/cover/target/set" then
+      if message == nil then
+        position = nil
+        return
+      end
+      local value = tonumber(message)
+      if value == nil then
+        return
+      end
+      if value < 0 then
+        value = 0
+      elseif range ~= nil and value > range then
+        value = range
+      end
+      unlock(true)
+      moveTo(value)
     elseif topic == "homie/"..NODE_NAME.."/cover/position/set" then
       if message == nil then
         position = nil
@@ -457,18 +477,20 @@ m:on("message", function(client, topic, message)
       if value == nil then
         return
       end
-      if position == nil then
-        position = value
-        positionChanged()
-      else
-        unlock(true)
-        moveTo(value)
+
+      position = value
+      if position > range then
+        range = position
       end
+      positionChanged()
     elseif topic == "homie/"..NODE_NAME.."/cover/range/set" then
       if message == nil then
         range = nil
       else
         range = tonumber(message)
+        if position > range then
+          position = range
+        end
       end
       positionChanged()
     elseif topic == "homie/"..NODE_NAME.."/cover/range" then
