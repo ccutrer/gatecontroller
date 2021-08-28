@@ -227,6 +227,7 @@ m:on("connect", function(client)
   client:subscribe("homie/"..NODE_NAME.."/$config", 0)
   client:subscribe("homie/"..NODE_NAME.."/$debug", 0)
   client:subscribe("homie/"..NODE_NAME.."/$restart", 0)
+  client:subscribe("homie/"..NODE_NAME.."/$lua", 0)
 
   client:publish("homie/"..NODE_NAME.."/$state", "ready", 1, 1)
 end)
@@ -578,6 +579,12 @@ m:on("message", function(client, topic, message)
   elseif topic == "homie/"..NODE_NAME.."/$debug" then
     debug = message == "true"
     log("debug set to "..tostring(debug))
+  elseif topic == "homie/"..NODE_NAME.."/$lua" then
+    output = evaluate(message)
+    if output == nil then
+      output = 'nil'
+    end
+    m:publish("homie/"..NODE_NAME.."/$lua/output", tostring(output), 1, 0)
   elseif topic == "homie/"..NODE_NAME.."/$restart" and message == "true" then
     log("forcing restart")
     node.restart()

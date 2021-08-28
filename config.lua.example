@@ -10,3 +10,4 @@ HAS_PUSH_TO_EXIT = true
 HAS_COVER = false
 HAS_DIMMER = false
 HAS_LUXMETER = false
+HAS_KEYPAD = true

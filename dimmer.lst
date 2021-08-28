@@ -3,3 +3,4 @@ app/dummy_strings.lua
 app/dimmer.lua
 app/mqtt.lua
 app/ota_update.lua
+app/repl.lua

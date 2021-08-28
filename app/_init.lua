@@ -101,7 +101,7 @@ end
 
 wifi.sta.sethostname(NODE_NAME)
 
-VERSION = "1.5.8"
+VERSION = "1.5.9"
 
 if not NO_INIT then
   if HAS_LATCH and HAS_COVER then
@@ -153,6 +153,7 @@ if not NO_INIT then
 
   wifi.sta.autoconnect(0)
 
+  dofile("repl.lua")
   if HAS_COVER then
     dofile("ammeter.lua")
     dofile("cover.lua")
