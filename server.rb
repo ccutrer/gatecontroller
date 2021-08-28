@@ -6,7 +6,7 @@ require 'socket' # Provides TCPServer and TCPSocket classes
 # on localhost:2345 for incoming connections.
 server = TCPServer.new('0.0.0.0', 2345)
 
-file = File.open("app/LFS.img", "r")
+file = File.open("LFS.img", "r")
 
 # loop infinitely, processing one incoming
 # connection at a time.
