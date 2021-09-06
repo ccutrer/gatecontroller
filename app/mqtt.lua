@@ -170,7 +170,12 @@ m:on("connect", function(client)
     nodes = "device"
     client:publish("homie/"..NODE_NAME.."/device/$name", "Device", 1, 1)
     client:publish("homie/"..NODE_NAME.."/device/$type", "Device", 1, 1)
-    client:publish("homie/"..NODE_NAME.."/device/$properties", "report-period", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/device/$properties", "report-period,unit", 1, 1)
+
+    client:publish("homie/"..NODE_NAME.."/device/unit/$name", "Report Period", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/device/unit/$datatype", "string", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/device/unit/$format", "F,C", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/device/unit/$settable", "true", 1, 1)
 
     if ds18b20.sens then
       for i, s in ipairs(ds18b20.sens) do
@@ -183,19 +188,19 @@ m:on("connect", function(client)
 
         client:publish("homie/"..NODE_NAME.."/"..addr.."/current-temperature/$name", "Current Temperature", 1, 1)
         client:publish("homie/"..NODE_NAME.."/"..addr.."/current-temperature/$datatype", "float", 1, 1)
-        client:publish("homie/"..NODE_NAME.."/"..addr.."/current-temperature/$unit", "ºC", 1, 1)
+        client:publish("homie/"..NODE_NAME.."/"..addr.."/current-temperature/$unit", "º"..unit, 1, 1)
       end
     end
   end
 
   if HAS_LUXMETER or HAS_TEMP_SENSORS then
-    node = "luxmeter"
-    if HAS_TEMP_SENSORS then node = "device" end
-    client:publish("homie/"..NODE_NAME.."/"..node.."/report-period/$name", "Report Period", 1, 1)
-    client:publish("homie/"..NODE_NAME.."/"..node.."/report-period/$datatype", "integer", 1, 1)
-    client:publish("homie/"..NODE_NAME.."/"..node.."/report-period/$format", "1:", 1, 1)
-    client:publish("homie/"..NODE_NAME.."/"..node.."/report-period/$settable", "true", 1, 1)
-    client:publish("homie/"..NODE_NAME.."/"..node.."/report-period/$unit", "ms", 1, 1)
+    local node_name = "luxmeter"
+    if HAS_TEMP_SENSORS then node_name = "device" end
+    client:publish("homie/"..NODE_NAME.."/"..node_name.."/report-period/$name", "Report Period", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/"..node_name.."/report-period/$datatype", "integer", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/"..node_name.."/report-period/$format", "1:", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/"..node_name.."/report-period/$settable", "true", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/"..node_name.."/report-period/$unit", "ms", 1, 1)
   end
 
   client:publish("homie/"..NODE_NAME.."/$nodes", nodes, 1, 1)
@@ -248,6 +253,13 @@ m:on("connect", function(client)
     client:subscribe("homie/"..NODE_NAME.."/luxmeter/report-period", 0)
 
     client:subscribe("homie/"..NODE_NAME.."/luxmeter/report-period/set", 0)
+  end
+
+  if HAS_TEMP_SENSORS then
+    client:subscribe("homie/"..NODE_NAME.."/device/unit", 0)
+    client:subscribe("homie/"..NODE_NAME.."/device/unit/set", 0)
+    client:subscribe("homie/"..NODE_NAME.."/device/report-period", 0)
+    client:subscribe("homie/"..NODE_NAME.."/device/report-period/set", 0)
   end
 
   client:subscribe("homie/"..NODE_NAME.."/$ota_update", 0)
@@ -433,6 +445,19 @@ local function split(string, sep)
   return fields
 end
 
+local function setUnit(message)
+  unit = message
+  if ds18b20.sens then
+    m:publish("homie/"..NODE_NAME.."/$state", "init", 1, 1)
+    for i, s in ipairs(ds18b20.sens) do
+      addr = ('%02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x'):format(s:byte(1,8))
+
+      m:publish("homie/"..NODE_NAME.."/"..addr.."/current-temperature/$unit", "º"..unit, 1, 1)
+    end
+    m:publish("homie/"..NODE_NAME.."/$state", "ready", 1, 1)
+  end
+end
+
 m:on("message", function(client, topic, message)
   log("got message "..tostring(message).." at "..topic)
 
@@ -593,21 +618,29 @@ m:on("message", function(client, topic, message)
   end
 
   if HAS_LUXMETER or HAS_TEMP_SENSORS then
-    local node = "luxmeter"
-    if HAS_TEMP_SENSORS then node = "device" end
+    local node_name = "luxmeter"
+    if HAS_TEMP_SENSORS then node_name = "device" end
 
-    if topic == "homie/"..NODE_NAME.."/"..node.."/report-period/set" then
+    if topic == "homie/"..NODE_NAME.."/"..node_name.."/report-period/set" then
       local period = tonumber(message)
       changeReportPeriod(period)
-      client:publish("homie/"..NODE_NAME.."/"..node.."/report-period", tostring(period), 1, 1)
-    elseif topic == "homie/"..NODE_NAME.."/"..node.."/report-period" then
+      client:publish("homie/"..NODE_NAME.."/"..node_name.."/report-period", tostring(period), 1, 1)
+    elseif topic == "homie/"..NODE_NAME.."/"..node_name.."/report-period" then
       local period = tonumber(message)
       changeReportPeriod(period)
-      client:unsubscribe("homie/"..NODE_NAME.."/"..node.."/report-period")
+      client:unsubscribe("homie/"..NODE_NAME.."/"..node_name.."/report-period")
     end
   end
 
   if HAS_TEMP_SENSORS then
+    if topic == "homie/"..NODE_NAME.."/device/unit/set" or
+      topic == "homie/"..NODE_NAME.."/device/unit" then
+      if message ~= unit and (message == 'C' or message == 'F' or message == 'K') then
+        setUnit(message)
+        client:publish("homie/"..NODE_NAME.."/device/unit", unit, 1, 1)
+      end
+    end
+
     if topic == "homie/"..NODE_NAME.."/device/report-period/set" then
       local period = tonumber(message)
       changeReportPeriod(period)

@@ -8,10 +8,12 @@ local function readout(temp)
   end
 end
 
-ds18b20:read_temp(readout, 3, ds18b20.C)
+unit = 'C'
+
+ds18b20:read_temp(readout, 3, unit)
 
 local function read()
-  ds18b20:read_temp(readout, 3, ds18b20.C)
+  ds18b20:read_temp(readout, 3, unit)
 end
 
 local timer = tmr.create()
