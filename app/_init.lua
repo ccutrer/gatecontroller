@@ -101,7 +101,7 @@ end
 
 wifi.sta.sethostname(NODE_NAME)
 
-VERSION = "1.5.9"
+VERSION = "1.6.0"
 
 if not NO_INIT then
   if HAS_LATCH and HAS_COVER then
@@ -166,6 +166,9 @@ if not NO_INIT then
   end
   if HAS_LUXMETER then
     dofile("luxmeter.lua")
+  end
+  if HAS_TEMP_SENSORS then
+    dofile("temp_sensor.lua")
   end
   if MQTT_HOST then
     local connectWifi = function()
