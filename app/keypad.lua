@@ -147,13 +147,18 @@ wiegand.create(1, 2, function(code, type)
   end
   if type == 4 then
     if code == 10 then -- *
-      -- two esc in a row means to lock
+      -- two esc in a row means to unlatch
       if totalCode == "" then
         if lastEsc then
           lastEsc = false
-          if HAS_LATCH and not locked then
-            signalSuccess()
-            unlatch()
+          if HAS_LATCH then
+            if not locked then
+              signalSuccess()
+              unlatch()
+            end
+          else
+            -- we don't have a local latch; let the hub handle it
+            receivedCode("**")
           end
         else
           lastEsc = true
@@ -171,6 +176,7 @@ wiegand.create(1, 2, function(code, type)
         totalCode = ""
         lastEnter = false
       elseif lastEnter then
+        -- two enter in a row means to lock
         lastEnter = false
         if HAS_LATCH then
           locked = true
@@ -178,9 +184,9 @@ wiegand.create(1, 2, function(code, type)
           signalSuccess()
         else
           -- we don't have a local latch; let the hub handle it
-          receivedCode("**")
+          receivedCode("##")
         end
-    else
+      else
         lastEnter = true
         keypadTimeout = tmr.create()
         keypadTimeout:alarm(4000, tmr.ALARM_SINGLE, function()
