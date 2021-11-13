@@ -101,7 +101,7 @@ end
 
 wifi.sta.sethostname(NODE_NAME)
 
-VERSION = "1.6.2"
+VERSION = "1.6.3"
 
 if not NO_INIT then
   if HAS_LATCH and HAS_COVER then

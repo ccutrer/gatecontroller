@@ -116,19 +116,46 @@ if HAS_LATCH then
 end
 
 -- bell
+local bellTimer
+
 gpio.trig(4, "down", function()
   triggered = gpio.read(4) == 0
-  log("bell pressed: " .. tostring(triggered))
-  if triggered then triggerBell() end
+  if triggered then
+    bellTimer = tmr.create()
+    bellTimer:alarm(100, tmr.ALARM_SINGLE, function()
+      log("bell pressed")
+      triggerBell()
+      bellTimer = nil
+    end)
+  else
+    if bellTimer then
+      bellTimer:stop()
+      bellTimer:unregister()
+      bellTimer = nil
+    end
+  end
 end)
 
 -- push-to-exit
 if HAS_PUSH_TO_EXIT then
+  local pteTimer
+
   gpio.trig(6, "both", function()
     triggered = gpio.read(6) == 0
-    log("exit requested: " .. tostring(triggered))
-    if triggered then triggerPushToExit() end
-    if triggered and not restricted then unlatch() end
+    if triggered then
+      pteTimer = tmr.create()
+      pteTimer:alarm(100, tmr.ALARM_SINGLE, function()
+        log("exit requested")
+        triggerPushToExit()
+        if not restricted then unlatch() end
+      end)
+    else
+      if pteTimer then
+        pteTimer:stop()
+        pteTimer:unregister()
+        pteTimer = nil
+      end
+    end
   end)
 end
 
