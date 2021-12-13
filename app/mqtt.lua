@@ -188,7 +188,7 @@ m:on("connect", function(client)
 
         client:publish("homie/"..NODE_NAME.."/"..addr.."/current-temperature/$name", "Current Temperature", 1, 1)
         client:publish("homie/"..NODE_NAME.."/"..addr.."/current-temperature/$datatype", "float", 1, 1)
-        client:publish("homie/"..NODE_NAME.."/"..addr.."/current-temperature/$unit", "º"..unit, 1, 1)
+        client:publish("homie/"..NODE_NAME.."/"..addr.."/current-temperature/$unit", "°"..unit, 1, 1)
       end
     end
   end
@@ -452,7 +452,7 @@ local function setUnit(message)
     for i, s in ipairs(ds18b20.sens) do
       addr = ('%02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x'):format(s:byte(1,8))
 
-      m:publish("homie/"..NODE_NAME.."/"..addr.."/current-temperature/$unit", "º"..unit, 1, 1)
+      m:publish("homie/"..NODE_NAME.."/"..addr.."/current-temperature/$unit", "°"..unit, 1, 1)
     end
     m:publish("homie/"..NODE_NAME.."/$state", "ready", 1, 1)
   end
