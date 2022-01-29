@@ -170,12 +170,7 @@ m:on("connect", function(client)
     nodes = "device"
     client:publish("homie/"..NODE_NAME.."/device/$name", "Device", 1, 1)
     client:publish("homie/"..NODE_NAME.."/device/$type", "Device", 1, 1)
-    client:publish("homie/"..NODE_NAME.."/device/$properties", "report-period,unit", 1, 1)
-
-    client:publish("homie/"..NODE_NAME.."/device/unit/$name", "Report Period", 1, 1)
-    client:publish("homie/"..NODE_NAME.."/device/unit/$datatype", "string", 1, 1)
-    client:publish("homie/"..NODE_NAME.."/device/unit/$format", "F,C", 1, 1)
-    client:publish("homie/"..NODE_NAME.."/device/unit/$settable", "true", 1, 1)
+    client:publish("homie/"..NODE_NAME.."/device/$properties", "report-period", 1, 1)
 
     if ds18b20.sens then
       for i, s in ipairs(ds18b20.sens) do
@@ -188,7 +183,7 @@ m:on("connect", function(client)
 
         client:publish("homie/"..NODE_NAME.."/"..addr.."/current-temperature/$name", "Current Temperature", 1, 1)
         client:publish("homie/"..NODE_NAME.."/"..addr.."/current-temperature/$datatype", "float", 1, 1)
-        client:publish("homie/"..NODE_NAME.."/"..addr.."/current-temperature/$unit", "°"..unit, 1, 1)
+        client:publish("homie/"..NODE_NAME.."/"..addr.."/current-temperature/$unit", "°C", 1, 1)
       end
     end
   end
@@ -256,8 +251,6 @@ m:on("connect", function(client)
   end
 
   if HAS_TEMP_SENSORS then
-    client:subscribe("homie/"..NODE_NAME.."/device/unit", 0)
-    client:subscribe("homie/"..NODE_NAME.."/device/unit/set", 0)
     client:subscribe("homie/"..NODE_NAME.."/device/report-period", 0)
     client:subscribe("homie/"..NODE_NAME.."/device/report-period/set", 0)
   end
@@ -445,19 +438,6 @@ local function split(string, sep)
   return fields
 end
 
-local function setUnit(message)
-  unit = message
-  if ds18b20.sens then
-    m:publish("homie/"..NODE_NAME.."/$state", "init", 1, 1)
-    for i, s in ipairs(ds18b20.sens) do
-      addr = ('%02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x'):format(s:byte(1,8))
-
-      m:publish("homie/"..NODE_NAME.."/"..addr.."/current-temperature/$unit", "°"..unit, 1, 1)
-    end
-    m:publish("homie/"..NODE_NAME.."/$state", "ready", 1, 1)
-  end
-end
-
 m:on("message", function(client, topic, message)
   log("got message "..tostring(message).." at "..topic)
 
@@ -633,14 +613,6 @@ m:on("message", function(client, topic, message)
   end
 
   if HAS_TEMP_SENSORS then
-    if topic == "homie/"..NODE_NAME.."/device/unit/set" or
-      topic == "homie/"..NODE_NAME.."/device/unit" then
-      if message ~= unit and (message == 'C' or message == 'F' or message == 'K') then
-        setUnit(message)
-        client:publish("homie/"..NODE_NAME.."/device/unit", unit, 1, 1)
-      end
-    end
-
     if topic == "homie/"..NODE_NAME.."/device/report-period/set" then
       local period = tonumber(message)
       changeReportPeriod(period)
