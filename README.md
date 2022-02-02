@@ -1,8 +1,3 @@
-Loft minisplit
-
-192.168.85.206
-001dc9835e29
-
 opennuc.cutrer.network
 2345
 /LFS.img
