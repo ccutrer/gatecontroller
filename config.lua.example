@@ -5,6 +5,7 @@ MQTT_USERNAME = "backgate"
 MQTT_PASSWORD = ""
 NODE_NAME = "backgate"
 HAS_CONTACT = true
+HAS_COUNTER = false
 HAS_COVER = false
 HAS_DIMMER = false
 HAS_KEYPAD = true
